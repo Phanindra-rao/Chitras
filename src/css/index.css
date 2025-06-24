@@ -1,0 +1,49 @@
+/* src/css/index.css */
+
+/* Reset and base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Roboto', Arial, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f3f4f6;
+  color: #1f2937;
+}
+
+/* Main content */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  display: flex;
+  gap: 1.5rem;
+  flex: 1;
+}
+
+main {
+  flex: 1;
+}
+
+/* Media query for responsiveness */
+@media (max-width: 768px) {
+  .dashboard-container {
+    flex-direction: column;
+  }
+
+  .profile-section,
+  .about-section {
+    border-right: none;
+    border-left: none;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .feed-section {
+    border-bottom: 1px solid #e5e7eb;
+  }
+}

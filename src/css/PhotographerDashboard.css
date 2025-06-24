@@ -1,0 +1,35 @@
+.dashboard-container {
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem;
+  background-color: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.profile-section {
+  padding: 1rem;
+  text-align: center;
+}
+
+.profile-photo {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #1e40af;
+}
+
+.profile-text {
+  font-size: 1.1rem;
+  color: #374151;
+  margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 1rem;
+  }
+}

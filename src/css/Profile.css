@@ -1,0 +1,56 @@
+/* src/css/Profile.css */
+
+/* Profile */
+.edit-button {
+  background-color: #1e40af;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  margin: 0.5rem 0;
+}
+
+.edit-button:hover {
+  background-color: #1e3a8a;
+}
+
+.portfolio-upload {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-radius: 0.375rem;
+}
+
+.portfolio-upload h3 {
+  font-size: 1.2rem;
+  color: #1e40af;
+  margin-bottom: 0.75rem;
+}
+
+.portfolio-upload form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.portfolio-upload select,
+.portfolio-upload input {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 0.95rem;
+}
+
+.portfolio-upload button {
+  background-color: #1e40af;
+  color: white;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+
+.portfolio-upload button:hover {
+  background-color: #1e3a8a;
+}

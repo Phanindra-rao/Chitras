@@ -1,0 +1,10 @@
+/* src/css/Footer.css */
+
+/* Footer */
+footer {
+  background-color: #1e293b;
+  color: white;
+  padding: 1.5rem;
+  text-align: center;
+  margin-top: auto;
+}
