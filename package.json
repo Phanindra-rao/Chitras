@@ -2,7 +2,7 @@
   "name": "photo",
   "version": "1.0.0",
   "private": true,
-  "homepage": "https://yourusername.github.io/Chitrasethu",
+  "homepage": "https://yourusername.github.io/Chitrasethu/Chitras",
   "scripts": {
     "start": "vite",
     "build": "vite build",
