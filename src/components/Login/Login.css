@@ -1,0 +1,283 @@
+/* Login Component Styles */
+.login {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  padding: var(--spacing-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.login::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+  pointer-events: none;
+}
+
+.login h2 {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  letter-spacing: -0.025em;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  position: relative;
+  z-index: 1;
+}
+
+.login .tabs {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: var(--spacing-xl);
+  border-bottom: 2px solid var(--surface-tertiary);
+  padding-bottom: var(--spacing-sm);
+  background: var(--surface-color);
+  border-radius: var(--border-radius-xl);
+  padding: var(--spacing-sm);
+  box-shadow: var(--shadow-md);
+  position: relative;
+  z-index: 1;
+}
+
+.login .tab-button {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+  transition: all var(--transition-duration) ease;
+  border-radius: var(--border-radius-lg);
+  position: relative;
+  overflow: hidden;
+  flex: 1;
+  text-align: center;
+  font-size: var(--font-size-base);
+}
+
+.login .tab-button:hover {
+  color: var(--primary-color);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.login .tab-button.active {
+  color: var(--primary-color);
+  background: rgba(59, 130, 246, 0.1);
+  box-shadow: var(--shadow-sm);
+}
+
+.login label {
+  display: block;
+  margin-bottom: var(--spacing-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.login input,
+.login textarea {
+  width: 100%;
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  border: 2px solid var(--surface-tertiary);
+  border-radius: var(--border-radius-lg);
+  font-size: var(--font-size-base);
+  background: var(--surface-color);
+  transition: all var(--transition-duration) ease;
+  color: var(--text-primary);
+  font-weight: var(--font-weight-medium);
+  box-sizing: border-box;
+}
+
+.login input:focus,
+.login textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  background: var(--surface-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  transform: translateY(-2px);
+}
+
+.login input::placeholder,
+.login textarea::placeholder {
+  color: var(--text-tertiary);
+  font-weight: var(--font-weight-normal);
+}
+
+.login .user-type {
+  margin-bottom: var(--spacing-lg);
+}
+
+.login .user-type label {
+  display: block;
+  margin-bottom: var(--spacing-md);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+  text-transform: none;
+}
+
+.login .radio-group {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.login .radio-group label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  border: 2px solid var(--surface-tertiary);
+  border-radius: var(--border-radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-duration) ease;
+  background: var(--surface-color);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  text-transform: none;
+  margin-bottom: 0;
+}
+
+.login .radio-group label:hover {
+  border-color: var(--primary-color);
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--primary-color);
+}
+
+.login .radio-group input[type="radio"] {
+  width: auto;
+  margin: 0;
+  accent-color: var(--primary-color);
+}
+
+.login .radio-group input[type="radio"]:checked + label {
+  border-color: var(--primary-color);
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--primary-color);
+}
+
+.login button[type="submit"] {
+  width: 100%;
+  padding: var(--spacing-md);
+  background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+  color: var(--text-on-primary);
+  border: none;
+  border-radius: var(--border-radius-lg);
+  cursor: pointer;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-base);
+  transition: all var(--transition-duration) ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  z-index: 1;
+}
+
+.login button[type="submit"]:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  background: linear-gradient(45deg, var(--primary-dark), var(--secondary-color));
+}
+
+.login button[type="submit"]:active {
+  transform: translateY(0);
+}
+
+/* Sign In specific */
+.signin-form {
+  display: none;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.signin-form.active {
+  display: block;
+}
+
+/* Sign Up specific */
+.signup-form {
+  display: none;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.signup-form.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .login {
+    padding: var(--spacing-md);
+  }
+  
+  .login h2 {
+    font-size: var(--font-size-2xl);
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  .login .tabs {
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  .login .tab-button {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--font-size-sm);
+  }
+  
+  .login .radio-group {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+  
+  .login .radio-group label {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .login {
+    padding: var(--spacing-sm);
+  }
+  
+  .login h2 {
+    font-size: var(--font-size-xl);
+  }
+  
+  .login input,
+  .login textarea {
+    padding: var(--spacing-sm);
+    font-size: var(--font-size-sm);
+  }
+  
+  .login button[type="submit"] {
+    padding: var(--spacing-sm);
+    font-size: var(--font-size-sm);
+  }
+}
