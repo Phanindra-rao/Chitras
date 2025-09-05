@@ -2,7 +2,7 @@
   "name": "chitrasethu",
   "version": "1.0.0",
   "private": true,
-  "homepage": "https://yourusername.github.io/Chitrasethu/Chitras",
+  "homepage": "https://boini.github.io/Chitrasethu/Chitras",
   "scripts": {
     "dev": "vite",
     "start": "vite",
