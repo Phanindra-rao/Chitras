@@ -862,3 +862,211 @@ body {
     right: var(--spacing-sm);
   }
 }
+
+/* Collaboration Feed Styles */
+.collaboration-feed-section {
+  padding: var(--spacing-lg);
+}
+
+.collaboration-feed-section .section-header {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.collaboration-feed-section .section-header h2 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.collaboration-feed-section .section-header p {
+  color: var(--text-secondary);
+  font-size: var(--font-size-lg);
+}
+
+.collaboration-feed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.collaboration-post {
+  background: var(--surface-color);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-xl);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--surface-tertiary);
+  transition: all 0.3s ease;
+}
+
+.collaboration-post:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.post-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.collaboration-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+.photographer-info, .customer-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.profile-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.photographer-name, .customer-name {
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.collaboration-icon {
+  font-size: var(--font-size-lg);
+}
+
+.post-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--spacing-xs);
+}
+
+.event-type {
+  background: var(--primary-color);
+  color: var(--text-on-primary);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.timestamp {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+}
+
+.post-content {
+  margin-bottom: var(--spacing-lg);
+}
+
+.post-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.post-description {
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.post-media {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.media-item {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.media-item:hover {
+  transform: scale(1.02);
+}
+
+.media-item img, .media-item video {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.media-caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+  color: white;
+  padding: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.post-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+}
+
+.tag {
+  background: var(--surface-tertiary);
+  color: var(--text-secondary);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.post-engagement {
+  display: flex;
+  gap: var(--spacing-lg);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.likes, .comments {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+/* Responsive styles for collaboration feed */
+@media (max-width: 768px) {
+  .collaboration-post {
+    padding: var(--spacing-lg);
+  }
+  
+  .post-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+  
+  .post-meta {
+    align-items: flex-start;
+  }
+  
+  .post-media {
+    grid-template-columns: 1fr;
+  }
+  
+  .media-item img, .media-item video {
+    height: 150px;
+  }
+}

@@ -1,140 +1,217 @@
 import React, { useState, useEffect } from 'react';
 import './Moodboard.css';
 
-function Moodboard({ moodboard, onSave, onShare, isEditable = true }) {
-  const [items, setItems] = useState(moodboard?.items || []);
-  const [title, setTitle] = useState(moodboard?.title || '');
-  const [description, setDescription] = useState(moodboard?.description || '');
-  const [isAddingItem, setIsAddingItem] = useState(false);
-  const [newItem, setNewItem] = useState({ type: 'image', url: '', caption: '' });
+function Moodboard({ 
+  onSave, 
+  curatedCollections, 
+  userMoodboards, 
+  trendingMoodboards, 
+  aiRecommendations,
+  collaborationPosts,
+  currentUser,
+  photographers,
+  upcomingEvents,
+  onPhotographerSelect
+}) {
+  const [activeTab, setActiveTab] = useState('curated');
+  
+  // Debug logging
+  console.log('Moodboard props:', { collaborationPosts, curatedCollections, userMoodboards });
 
-  const handleAddItem = () => {
-    if (newItem.url.trim()) {
-      const item = {
-        id: Date.now(),
-        type: newItem.type,
-        url: newItem.url,
-        caption: newItem.caption,
-        addedAt: new Date().toISOString()
-      };
-      setItems([...items, item]);
-      setNewItem({ type: 'image', url: '', caption: '' });
-      setIsAddingItem(false);
-    }
-  };
+  // Tab options
+  const tabs = [
+    { id: 'curated', label: 'Curated Collections', icon: '🎨' },
+    { id: 'collaborations', label: 'Collaborations', icon: '🤝' },
+    { id: 'my-boards', label: 'My Boards', icon: '📋' },
+    { id: 'trending', label: 'Trending', icon: '🔥' },
+    { id: 'recommendations', label: 'AI Recommendations', icon: '🤖' }
+  ];
 
-  const handleRemoveItem = (itemId) => {
-    setItems(items.filter(item => item.id !== itemId));
-  };
-
-  const handleSave = () => {
-    const moodboardData = {
-      id: moodboard?.id || Date.now(),
-      title,
-      description,
-      items,
-      updatedAt: new Date().toISOString()
-    };
-    onSave(moodboardData);
-  };
-
-  return (
-    <div className="moodboard">
-      <div className="moodboard-header">
-        <div className="moodboard-info">
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Moodboard Title"
-            className="moodboard-title"
-            disabled={!isEditable}
-          />
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Describe your vision..."
-            className="moodboard-description"
-            disabled={!isEditable}
-          />
+  const renderCuratedCollections = () => (
+    <div className="media-grid">
+      {curatedCollections.map(collection => (
+        <div key={collection.id}>
+          <img src={collection.coverImage} alt={collection.name} />
+          {collection.items.map(item => (
+            <div key={item.id}>
+              {item.type === 'photographer' ? (
+                <img src={item.data.image} alt={item.data.name} />
+              ) : item.type === 'event' ? (
+                <img src={item.data.image} alt={item.data.title} />
+              ) : (
+                <img src={item.data.image} alt={item.data.caption} />
+              )}
+            </div>
+          ))}
         </div>
-        {isEditable && (
-          <div className="moodboard-actions">
-            <button onClick={handleSave} className="save-btn">
-              Save Moodboard
-            </button>
-            <button onClick={onShare} className="share-btn">
-              Share
-            </button>
-          </div>
-        )}
-      </div>
+      ))}
+    </div>
+  );
 
-      <div className="moodboard-grid">
-        {items.map((item) => (
-          <div key={item.id} className="moodboard-item">
-            {item.type === 'image' ? (
-              <img src={item.url} alt={item.caption} className="moodboard-image" />
-            ) : (
-              <div className="moodboard-text">{item.url}</div>
-            )}
-            {item.caption && <p className="item-caption">{item.caption}</p>}
-            {isEditable && (
-              <button
-                onClick={() => handleRemoveItem(item.id)}
-                className="remove-item-btn"
-              >
-                ×
-              </button>
-            )}
+  const renderMyBoards = () => (
+    <div className="media-grid">
+      {userMoodboards.map(board => (
+        <div key={board.id}>
+          {board.items.map(item => (
+            <div key={item.id}>
+              {item.type === 'photographer' ? (
+                <img src={item.data.image} alt={item.data.name} />
+              ) : item.type === 'event' ? (
+                <img src={item.data.image} alt={item.data.title} />
+              ) : (
+                <img src={item.data.image} alt={item.data.caption} />
+              )}
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+
+  const renderTrending = () => (
+    <div className="media-grid">
+      {trendingMoodboards.map(board => (
+        <div key={board.id}>
+          <img src={board.coverImage} alt={board.name} />
+          {board.items && board.items.map(item => (
+            <div key={item.id}>
+              {item.type === 'photographer' ? (
+                <img src={item.data.image} alt={item.data.name} />
+              ) : item.type === 'event' ? (
+                <img src={item.data.image} alt={item.data.title} />
+              ) : (
+                <img src={item.data.image} alt={item.data.caption} />
+              )}
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+
+  const renderRecommendations = () => (
+    <div className="media-grid">
+      {aiRecommendations.map(rec => (
+        <div key={rec.id}>
+          {rec.type === 'photographer' ? (
+            <img src={rec.data.image} alt={rec.data.name} />
+          ) : (
+            <img src={rec.data.image} alt={rec.data.title} />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+
+  const renderCollaborations = () => {
+    console.log('Rendering collaborations, posts:', collaborationPosts);
+    
+    // Simple test first
+    return (
+      <div className="collaboration-feed">
+        <div className="collaboration-post">
+          <h2>🤝 Collaboration Feed</h2>
+          <p>This is the collaboration feed section!</p>
+          <p>Posts count: {collaborationPosts ? collaborationPosts.length : 'undefined'}</p>
+        </div>
+      </div>
+    );
+    
+    if (!collaborationPosts || collaborationPosts.length === 0) {
+      return (
+        <div className="collaboration-feed">
+          <div className="no-collaborations">
+            <p>No collaboration posts available at the moment.</p>
+          </div>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="collaboration-feed">
+        {collaborationPosts.map(post => (
+          <div key={post.id} className="collaboration-post">
+            <div className="post-header">
+              <div className="collaboration-info">
+                <div className="photographer-info">
+                  <img src={post.photographerImage} alt={post.photographerName} className="profile-img" />
+                  <span className="photographer-name">{post.photographerName}</span>
+                </div>
+                <div className="collaboration-icon">🤝</div>
+                <div className="customer-info">
+                  <img src={post.customerImage} alt={post.customerName} className="profile-img" />
+                  <span className="customer-name">{post.customerName}</span>
+                </div>
+              </div>
+              <div className="post-meta">
+                <span className="event-type">{post.eventType}</span>
+                <span className="timestamp">{post.timestamp}</span>
+              </div>
+            </div>
+            
+            <div className="post-content">
+              <h3 className="post-title">{post.title}</h3>
+              <p className="post-description">{post.content}</p>
+            </div>
+            
+            <div className="post-media">
+              {post.media.map((media, index) => (
+                <div key={index} className="media-item">
+                  {media.type === 'image' ? (
+                    <img src={media.url} alt={media.caption} />
+                  ) : (
+                    <video controls>
+                      <source src={media.url} type="video/mp4" />
+                      Your browser does not support the video tag.
+                    </video>
+                  )}
+                  <p className="media-caption">{media.caption}</p>
+                </div>
+              ))}
+            </div>
+            
+            <div className="post-tags">
+              {post.tags.map((tag, index) => (
+                <span key={index} className="tag">#{tag}</span>
+              ))}
+            </div>
+            
+            <div className="post-engagement">
+              <span className="likes">❤️ {post.likes}</span>
+              <span className="comments">💬 {post.comments}</span>
+            </div>
           </div>
         ))}
       </div>
+    );
+  };
 
-      {isEditable && (
-        <div className="add-item-section">
-          {!isAddingItem ? (
-            <button onClick={() => setIsAddingItem(true)} className="add-item-btn">
-              + Add Item
-            </button>
-          ) : (
-            <div className="add-item-form">
-              <select
-                value={newItem.type}
-                onChange={(e) => setNewItem({ ...newItem, type: e.target.value })}
-                className="item-type-select"
-              >
-                <option value="image">Image</option>
-                <option value="text">Text</option>
-              </select>
-              <input
-                type="text"
-                value={newItem.url}
-                onChange={(e) => setNewItem({ ...newItem, url: e.target.value })}
-                placeholder={newItem.type === 'image' ? 'Image URL' : 'Text content'}
-                className="item-url-input"
-              />
-              <input
-                type="text"
-                value={newItem.caption}
-                onChange={(e) => setNewItem({ ...newItem, caption: e.target.value })}
-                placeholder="Caption (optional)"
-                className="item-caption-input"
-              />
-              <div className="add-item-actions">
-                <button onClick={handleAddItem} className="confirm-add-btn">
-                  Add
-                </button>
-                <button onClick={() => setIsAddingItem(false)} className="cancel-btn">
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+
+  return (
+    <div className="moodboard-container">
+      <div className="moodboard-tabs">
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
+            onClick={() => setActiveTab(tab.id)}
+          >
+            <span className="tab-icon">{tab.icon}</span>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      
+      <div className="moodboard-content">
+        {activeTab === 'curated' && renderCuratedCollections()}
+        {activeTab === 'collaborations' && renderCollaborations()}
+        {activeTab === 'my-boards' && renderMyBoards()}
+        {activeTab === 'trending' && renderTrending()}
+        {activeTab === 'recommendations' && renderRecommendations()}
+      </div>
     </div>
   );
 }
 
 export default Moodboard;
+

@@ -34,3 +34,5 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./Chitras/dist
         force_orphan: true
+
+

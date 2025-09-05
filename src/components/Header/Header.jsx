@@ -23,8 +23,8 @@ function Header({ setView, currentUser, onSignOut, onMessagingToggle, searchQuer
               <button onClick={() => handleNavigation('explore')} className="nav-btn">
                 🔍 Explore
               </button>
-              <button onClick={() => handleNavigation('timeline')} className="nav-btn">
-                📅 Timeline
+              <button onClick={() => handleNavigation('event-photos')} className="nav-btn">
+                📸 Event Photos
               </button>
               <button onClick={() => handleNavigation('moodboard')} className="nav-btn">
                 🎨 Moodboard
