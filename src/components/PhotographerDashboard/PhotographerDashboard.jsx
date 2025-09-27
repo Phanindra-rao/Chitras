@@ -1,989 +1,1358 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './PhotographerDashboard.css';
+import PhotographerProfile from '../PhotographerProfile/PhotographerProfile';
+import Photobooth from '../Photobooth/Photobooth';
 
-function PhotographerDashboard({ user }) {
-  const [activeSection, setActiveSection] = useState('dashboard');
-  const [searchQuery, setSearchQuery] = useState('');
+function PhotographerDashboard({ currentUser, photographers, users, onViewProfile, onNavigateToPhotographer }) {
+  const [activeView, setActiveView] = useState('home');
+  const [leftPanelActive, setLeftPanelActive] = useState('profile');
+  const [leftPanelSubActive, setLeftPanelSubActive] = useState(null);
+  const [jobsTab, setJobsTab] = useState('post');
+  const [portfolioPhotos, setPortfolioPhotos] = useState([
+    { id: 1, url: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=400', category: 'wedding', isFeatured: true },
+    { id: 2, url: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400', category: 'portrait', isFeatured: false },
+    { id: 3, url: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400', category: 'event', isFeatured: true }
+  ]);
+  const [services, setServices] = useState([
+    { id: 1, name: 'Wedding Photography', price: 50000, duration: 'Full Day', description: 'Complete wedding day coverage', isActive: true },
+    { id: 2, name: 'Portrait Session', price: 15000, duration: '2 Hours', description: 'Professional portrait photography', isActive: true },
+    { id: 3, name: 'Event Coverage', price: 25000, duration: 'Half Day', description: 'Corporate and social events', isActive: true }
+  ]);
 
-  // Mock data for demonstration
-  const upcomingEvents = [
+  // Event media management
+  const [eventMedia, setEventMedia] = useState({
+    1: [
+      { id: 1, type: 'photo', url: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=400', name: 'Wedding Ceremony', uploadedAt: '2024-01-15T10:30:00Z' },
+      { id: 2, type: 'video', url: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4', name: 'Reception Highlights', uploadedAt: '2024-01-15T12:00:00Z' },
+      { id: 3, type: 'photo', url: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400', name: 'Family Portraits', uploadedAt: '2024-01-15T14:00:00Z' }
+    ],
+    2: [
+      { id: 4, type: 'photo', url: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400', name: 'Conference Setup', uploadedAt: '2024-01-20T09:00:00Z' },
+      { id: 5, type: 'photo', url: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=400', name: 'Keynote Speaker', uploadedAt: '2024-01-20T10:30:00Z' }
+    ]
+  });
+
+  const [selectedEventForMedia, setSelectedEventForMedia] = useState(null);
+  const [mediaUploadModal, setMediaUploadModal] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState({});
+  
+  // Sample data for photographer
+  const [upcomingEvents, setUpcomingEvents] = useState([
     {
       id: 1,
-      title: 'Wedding Photography - Sarah & John',
-      date: 'Dec 20, 2024',
-      time: '10:00 AM',
-      location: 'Taj Palace, Mumbai',
-      status: 'confirmed',
-      client: 'Sarah Wilson',
-      budget: '₹25,000'
+      name: "Wedding Photography - Sarah & John",
+      date: "2024-02-15",
+      time: "10:00 AM",
+      location: "Grand Hotel, Mumbai",
+      status: "confirmed",
+      client: "Sarah Johnson",
+      package: "Premium Wedding Package",
+      price: "₹50,000"
     },
     {
       id: 2,
-      title: 'Corporate Event - Tech Summit',
-      date: 'Dec 22, 2024',
-      time: '2:00 PM',
-      location: 'Convention Center, Delhi',
-      status: 'pending',
-      client: 'TechCorp India',
-      budget: '₹15,000'
-    },
-    {
-      id: 3,
-      title: 'Fashion Shoot - Vogue Magazine',
-      date: 'Dec 25, 2024',
-      time: '9:00 AM',
-      location: 'Studio 5, Bangalore',
-      status: 'confirmed',
-      client: 'Vogue India',
-      budget: '₹30,000'
+      name: "Corporate Event - Tech Conference",
+      date: "2024-02-20",
+      time: "9:00 AM",
+      location: "Convention Center, Delhi",
+      status: "confirmed",
+      client: "Tech Corp",
+      package: "Corporate Event Package",
+      price: "₹25,000"
     }
-  ];
+  ]);
 
-  const recentUploads = [
+  const [newRequests, setNewRequests] = useState([
     {
       id: 1,
-      title: 'Wedding Collection - Golden Hour',
-      category: 'Wedding',
-      uploadDate: '2 hours ago',
-      likes: 45,
-      comments: 12,
-      saves: 8,
-      views: 234
+      clientName: "Priya Sharma",
+      eventType: "Birthday Party",
+      date: "2024-02-25",
+      location: "Mumbai",
+      budget: "₹15,000",
+      description: "Looking for a photographer for my daughter's 10th birthday party",
+      status: "pending"
     },
     {
       id: 2,
-      title: 'Fashion Editorial - Winter Collection',
-      category: 'Fashion',
-      uploadDate: '1 day ago',
-      likes: 78,
-      comments: 23,
-      saves: 15,
-      views: 456
+      clientName: "Raj Patel",
+      eventType: "Corporate Meeting",
+      date: "2024-02-28",
+      location: "Ahmedabad",
+      budget: "₹20,000",
+      description: "Need professional photography for our quarterly meeting",
+      status: "pending"
+    }
+  ]);
+
+  const [publicRequests, setPublicRequests] = useState([
+    {
+      id: 1,
+      clientName: "Anita Singh",
+      eventType: "Wedding",
+      date: "2024-03-05",
+      location: "Jaipur",
+      budget: "₹75,000",
+      description: "Traditional Indian wedding photography needed",
+      status: "open"
     },
     {
-      id: 3,
-      title: 'Corporate Headshots - CEO Series',
-      category: 'Corporate',
-      uploadDate: '3 days ago',
-      likes: 32,
-      comments: 8,
-      saves: 5,
-      views: 189
+      id: 2,
+      clientName: "Vikram Kumar",
+      eventType: "Product Launch",
+      date: "2024-03-10",
+      location: "Bangalore",
+      budget: "₹35,000",
+      description: "Product launch event photography",
+      status: "open"
     }
-  ];
+  ]);
 
-  const engagementHighlights = {
-    moodboardSaves: 3,
-    photoViews: 120,
-    bookingInquiries: 2,
-    newFollowers: 8,
-    profileVisits: 45
+  const [photographerFeed, setPhotographerFeed] = useState([
+    {
+      id: 1,
+      type: "event_completion",
+      photographerName: "Rajesh Kumar",
+      eventName: "Corporate Event",
+      timestamp: "2 hours ago",
+      photos: ["https://images.unsplash.com/photo-1511578314322-379afb476865?w=400", "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=400"],
+      likes: 15,
+      comments: 3
+    },
+    {
+      id: 2,
+      type: "new_booking",
+      photographerName: "Priya Sharma",
+      eventName: "Wedding Photography",
+      timestamp: "4 hours ago",
+      message: "Just booked a new wedding for next month!",
+      likes: 8,
+      comments: 2
+    }
+  ]);
+
+  const [jobPosts, setJobPosts] = useState([
+    {
+      id: 1,
+      title: "Need Video Editor",
+      description: "Looking for a skilled video editor for wedding highlights",
+      budget: "₹10,000",
+      postedBy: "Rajesh Kumar",
+      timestamp: "1 day ago",
+      replies: 3
+    }
+  ]);
+
+  const [jobRequests, setJobRequests] = useState([
+    {
+      id: 1,
+      title: "Wedding Photography Assistant",
+      description: "Need an assistant photographer for a wedding next weekend",
+      budget: "₹5,000",
+      postedBy: "Priya Sharma",
+      timestamp: "2 hours ago",
+      status: "open"
+    }
+  ]);
+
+  const handleAcceptRequest = (requestId) => {
+    setNewRequests(prev => prev.map(req => 
+      req.id === requestId ? { ...req, status: 'accepted' } : req
+    ));
   };
 
-  const jobBoardPreview = [
-    {
-      id: 1,
-      title: 'New Year Party Photography',
-      location: 'Mumbai',
-      budget: '₹12,000',
-      date: 'Dec 31, 2024',
-      category: 'Event',
-      postedBy: 'Party Planners Inc'
-    },
-    {
-      id: 2,
-      title: 'Product Photography - E-commerce',
-      location: 'Delhi',
-      budget: '₹8,000',
-      date: 'Jan 5, 2025',
-      category: 'Commercial',
-      postedBy: 'Fashion Store'
-    },
-    {
-      id: 3,
-      title: 'Real Estate Photography',
-      location: 'Bangalore',
-      budget: '₹6,000',
-      date: 'Jan 10, 2025',
-      category: 'Real Estate',
-      postedBy: 'Property Developers'
-    }
-  ];
+  const handleDeclineRequest = (requestId) => {
+    setNewRequests(prev => prev.map(req => 
+      req.id === requestId ? { ...req, status: 'declined' } : req
+    ));
+  };
 
-  const leaderboardData = [
-    { rank: 1, name: 'Alex Chen', points: 2450, specialty: 'Wedding' },
-    { rank: 2, name: 'Priya Sharma', points: 2380, specialty: 'Fashion' },
-    { rank: 3, name: 'Rahul Kumar', points: 2150, specialty: 'Event' },
-    { rank: 4, name: user?.name || 'You', points: 1980, specialty: 'Portrait' }
-  ];
+  const handleApplyToRequest = (requestId) => {
+    setPublicRequests(prev => prev.map(req => 
+      req.id === requestId ? { ...req, status: 'applied' } : req
+    ));
+  };
 
-  const renderEventsBookings = () => (
-    <div className="events-bookings">
-      <div className="events-header">
-        <h1>📅 Events & Bookings</h1>
-        <div className="events-actions">
-          <button className="add-event-btn">➕ Add Event</button>
-          <button className="calendar-view-btn">📅 Calendar View</button>
-        </div>
+  // Left panel navigation handlers
+  const handleLeftPanelNavigation = (section) => {
+    setLeftPanelActive(section);
+    setLeftPanelSubActive(null);
+    console.log('Navigating to:', section);
+  };
+
+  const handleSubNavigation = (subSection) => {
+    setLeftPanelSubActive(subSection);
+    console.log('Navigating to sub-section:', subSection);
+  };
+
+  // Portfolio management handlers
+  const handleAddPortfolioPhoto = (file) => {
+    const newPhoto = {
+      id: Date.now(),
+      url: URL.createObjectURL(file),
+      category: 'general',
+      isFeatured: false
+    };
+    setPortfolioPhotos(prev => [...prev, newPhoto]);
+  };
+
+  const handleRemovePortfolioPhoto = (photoId) => {
+    setPortfolioPhotos(prev => prev.filter(photo => photo.id !== photoId));
+  };
+
+  const handleUpdatePhotoCategory = (photoId, category) => {
+    setPortfolioPhotos(prev => prev.map(photo => 
+      photo.id === photoId ? { ...photo, category } : photo
+    ));
+  };
+
+  const handleToggleFeatured = (photoId) => {
+    setPortfolioPhotos(prev => prev.map(photo => 
+      photo.id === photoId ? { ...photo, isFeatured: !photo.isFeatured } : photo
+    ));
+  };
+
+  // Services management handlers
+  const handleAddService = () => {
+    const newService = {
+      id: Date.now(),
+      name: 'New Service',
+      price: 0,
+      duration: '1 Hour',
+      description: 'Service description',
+      isActive: true
+    };
+    setServices(prev => [...prev, newService]);
+  };
+
+  const handleUpdateService = (serviceId, field, value) => {
+    setServices(prev => prev.map(service => 
+      service.id === serviceId ? { ...service, [field]: value } : service
+    ));
+  };
+
+  const handleRemoveService = (serviceId) => {
+    setServices(prev => prev.filter(service => service.id !== serviceId));
+  };
+
+  const handleToggleServiceActive = (serviceId) => {
+    setServices(prev => prev.map(service => 
+      service.id === serviceId ? { ...service, isActive: !service.isActive } : service
+    ));
+  };
+
+  // Event media handlers
+  const handleAddMediaToEvent = (eventId) => {
+    setSelectedEventForMedia(eventId);
+    setMediaUploadModal(true);
+  };
+
+  const handleDeleteMedia = (eventId, mediaId) => {
+    setEventMedia(prev => ({
+      ...prev,
+      [eventId]: prev[eventId].filter(media => media.id !== mediaId)
+    }));
+  };
+
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    setSelectedFiles(files);
+  };
+
+  const handleUploadMedia = async () => {
+    if (selectedFiles.length === 0 || !selectedEventForMedia) return;
+
+    const newMedia = selectedFiles.map((file, index) => ({
+      id: Date.now() + index,
+      type: file.type.startsWith('video/') ? 'video' : 'photo',
+      url: URL.createObjectURL(file),
+      name: file.name,
+      uploadedAt: new Date().toISOString()
+    }));
+
+    setEventMedia(prev => ({
+      ...prev,
+      [selectedEventForMedia]: [...(prev[selectedEventForMedia] || []), ...newMedia]
+    }));
+
+    setSelectedFiles([]);
+    setMediaUploadModal(false);
+    setSelectedEventForMedia(null);
+  };
+
+  const renderHeader = () => (
+    <div className="photographer-header">
+      <div className="header-content">
+        <div className="logo-section">
+          <h1>Chitrasethu</h1>
+          <span className="user-type">Photographer</span>
       </div>
 
-      {/* Booking Stats */}
-      <div className="booking-stats">
-        <div className="stat-card">
-          <div className="stat-icon">📅</div>
-          <div className="stat-content">
-            <h3>12</h3>
-            <p>Upcoming Events</p>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">⏰</div>
-          <div className="stat-content">
-            <h3>3</h3>
-            <p>Pending Requests</p>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">✅</div>
-          <div className="stat-content">
-            <h3>45</h3>
-            <p>Completed Events</p>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">💰</div>
-          <div className="stat-content">
-            <h3>₹2.4L</h3>
-            <p>This Month</p>
-          </div>
-        </div>
-      </div>
+        <nav className="header-nav">
+          <button 
+            className={`nav-item ${activeView === 'home' ? 'active' : ''}`}
+            onClick={() => setActiveView('home')}
+          >
+            🏠 Home
+          </button>
+          <button 
+            className={`nav-item ${activeView === 'requests' ? 'active' : ''}`}
+            onClick={() => setActiveView('requests')}
+          >
+            📋 Requests
+          </button>
+          <button 
+            className={`nav-item ${activeView === 'community' ? 'active' : ''}`}
+            onClick={() => setActiveView('community')}
+          >
+            💬 Community Buzz
+          </button>
+          <button 
+            className={`nav-item ${activeView === 'jobs' ? 'active' : ''}`}
+            onClick={() => setActiveView('jobs')}
+          >
+            💼 Jobs
+          </button>
+          <button 
+            className={`nav-item ${activeView === 'bookings' ? 'active' : ''}`}
+            onClick={() => setActiveView('bookings')}
+          >
+            📖 Bookings
+          </button>
+          <button 
+            className={`nav-item ${activeView === 'photobooth' ? 'active' : ''}`}
+            onClick={() => setActiveView('photobooth')}
+          >
+            📸 Photobooth
+          </button>
+          <button 
+            className={`nav-item ${activeView === 'maps' ? 'active' : ''}`}
+            onClick={() => setActiveView('maps')}
+          >
+            🗺️ Maps
+          </button>
+        </nav>
 
-      {/* Calendar View */}
-      <div className="calendar-section">
-        <div className="section-header">
-          <h2>📅 Calendar</h2>
-          <div className="calendar-controls">
-            <button className="calendar-btn">‹</button>
-            <span className="current-month">December 2024</span>
-            <button className="calendar-btn">›</button>
+        <div className="header-actions">
+          <button className="messenger-btn" onClick={() => setActiveView('messaging')}>
+            💬 Messages
+          </button>
+          <div className="user-profile">
+            <img src={currentUser?.profilePicture || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40"} alt="Profile" />
+            <span>{currentUser?.name}</span>
           </div>
         </div>
-        <div className="calendar-grid">
-          <div className="calendar-day">
-            <div className="day-number">1</div>
-            <div className="day-events">
-              <div className="event-dot confirmed"></div>
-            </div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">2</div>
-            <div className="day-events">
-              <div className="event-dot pending"></div>
-            </div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">3</div>
-            <div className="day-events"></div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">4</div>
-            <div className="day-events"></div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">5</div>
-            <div className="day-events"></div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">6</div>
-            <div className="day-events"></div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">7</div>
-            <div className="day-events"></div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">8</div>
-            <div className="day-events"></div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">9</div>
-            <div className="day-events"></div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">10</div>
-            <div className="day-events"></div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">11</div>
-            <div className="day-events"></div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">12</div>
-            <div className="day-events"></div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">13</div>
-            <div className="day-events"></div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">14</div>
-            <div className="day-events"></div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">15</div>
-            <div className="day-events"></div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">16</div>
-            <div className="day-events"></div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">17</div>
-            <div className="day-events"></div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">18</div>
-            <div className="day-events"></div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">19</div>
-            <div className="day-events"></div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">20</div>
-            <div className="day-events">
-              <div className="event-dot confirmed"></div>
-              <div className="event-dot confirmed"></div>
-            </div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">21</div>
-            <div className="day-events"></div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">22</div>
-            <div className="day-events">
-              <div className="event-dot pending"></div>
-            </div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">23</div>
-            <div className="day-events"></div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">24</div>
-            <div className="day-events"></div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">25</div>
-            <div className="day-events">
-              <div className="event-dot confirmed"></div>
-            </div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">26</div>
-            <div className="day-events"></div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">27</div>
-            <div className="day-events"></div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">28</div>
-            <div className="day-events"></div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">29</div>
-            <div className="day-events"></div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">30</div>
-            <div className="day-events"></div>
-          </div>
-          <div className="calendar-day">
-            <div className="day-number">31</div>
-            <div className="day-events">
-              <div className="event-dot confirmed"></div>
-            </div>
           </div>
         </div>
-      </div>
+  );
 
+  const renderLeftPanel = () => (
+    <div className="left-panel">
+      <div className="panel-section">
+        <h3>Navigation</h3>
+        <div className="nav-items">
+          <button 
+            className={`nav-item ${leftPanelActive === 'profile' ? 'active' : ''}`}
+            onClick={() => handleLeftPanelNavigation('profile')}
+          >
+            👤 My Profile
+          </button>
+          {leftPanelActive === 'profile' && (
+            <div className="sub-nav">
+              <button 
+                className={`sub-nav-item ${leftPanelSubActive === 'edit-profile' ? 'active' : ''}`}
+                onClick={() => handleSubNavigation('edit-profile')}
+              >
+                Edit Profile
+              </button>
+              <button 
+                className={`sub-nav-item ${leftPanelSubActive === 'view-public' ? 'active' : ''}`}
+                onClick={() => handleSubNavigation('view-public')}
+              >
+                View as Public
+              </button>
+          </div>
+          )}
+          
+          <button 
+            className={`nav-item ${leftPanelActive === 'event-photos' ? 'active' : ''}`}
+            onClick={() => handleLeftPanelNavigation('event-photos')}
+          >
+            📸 Event Photos
+          </button>
+          {leftPanelActive === 'event-photos' && (
+            <div className="sub-nav">
+              <button 
+                className={`sub-nav-item ${leftPanelSubActive === 'your-events' ? 'active' : ''}`}
+                onClick={() => handleSubNavigation('your-events')}
+              >
+                Your Events
+              </button>
+              <button 
+                className={`sub-nav-item ${leftPanelSubActive === 'public-events' ? 'active' : ''}`}
+                onClick={() => handleSubNavigation('public-events')}
+              >
+                Public Events
+              </button>
+        </div>
+          )}
+          
+          <button 
+            className={`nav-item ${leftPanelActive === 'moodboards' ? 'active' : ''}`}
+            onClick={() => handleLeftPanelNavigation('moodboards')}
+          >
+            🎨 Moodboards
+          </button>
+          {leftPanelActive === 'moodboards' && (
+            <div className="sub-nav">
+              <button 
+                className={`sub-nav-item ${leftPanelSubActive === 'editor' ? 'active' : ''}`}
+                onClick={() => handleSubNavigation('editor')}
+              >
+                Editor
+              </button>
+              <button 
+                className={`sub-nav-item ${leftPanelSubActive === 'public-moodboards' ? 'active' : ''}`}
+                onClick={() => handleSubNavigation('public-moodboards')}
+              >
+                Public
+              </button>
+          </div>
+          )}
+          
+          <button 
+            className={`nav-item ${leftPanelActive === 'community' ? 'active' : ''}`}
+            onClick={() => handleLeftPanelNavigation('community')}
+          >
+            👥 Community
+          </button>
+          {leftPanelActive === 'community' && (
+            <div className="sub-nav">
+              <button 
+                className={`sub-nav-item ${leftPanelSubActive === 'create-group' ? 'active' : ''}`}
+                onClick={() => handleSubNavigation('create-group')}
+              >
+                Create Group
+              </button>
+              <button 
+                className={`sub-nav-item ${leftPanelSubActive === 'share-work' ? 'active' : ''}`}
+                onClick={() => handleSubNavigation('share-work')}
+              >
+                Share Work
+              </button>
+              <button 
+                className={`sub-nav-item ${leftPanelSubActive === 'collaborate' ? 'active' : ''}`}
+                onClick={() => handleSubNavigation('collaborate')}
+              >
+                Collaborate
+              </button>
+          </div>
+          )}
+        </div>
+            </div>
+          </div>
+  );
+
+  const renderMiddleSection = () => (
+    <div className="middle-section">
+      <div className="feed-header">
+        <h2>Photographer Feed</h2>
+        <button className="refresh-btn">🔄 Refresh</button>
+            </div>
+
+      <div className="feed-content">
+        {photographerFeed.map(item => (
+          <div key={item.id} className="feed-item">
+            <div className="feed-header-info">
+              <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40" alt="Photographer" />
+              <div className="feed-info">
+                <h4>{item.photographerName}</h4>
+                <p>{item.timestamp}</p>
+          </div>
+          </div>
+            
+            <div className="feed-content-main">
+              {item.type === 'event_completion' && (
+                <div>
+                  <p>Completed <strong>{item.eventName}</strong></p>
+                  <div className="feed-photos">
+                    {item.photos.map((photo, index) => (
+                      <img key={index} src={photo} alt="Event photo" />
+                    ))}
+          </div>
+          </div>
+              )}
+              {item.type === 'new_booking' && (
+                <p>{item.message}</p>
+              )}
+          </div>
+            
+            <div className="feed-actions">
+              <button>❤️ {item.likes}</button>
+              <button>💬 {item.comments}</button>
+              <button>📤 Share</button>
+          </div>
+          </div>
+        ))}
+          </div>
+          </div>
+  );
+
+  const renderRightPanel = () => (
+    <div className="right-panel">
       {/* Upcoming Events */}
-      <div className="upcoming-events-section">
-        <div className="section-header">
-          <h2>⏰ Upcoming Events</h2>
-          <button className="view-all-btn">View All</button>
-        </div>
+      <div className="panel-section">
+        <h3>📅 Upcoming Events</h3>
         <div className="events-list">
-          <div className="event-card">
-            <div className="event-date">
-              <div className="date-day">20</div>
-              <div className="date-month">Dec</div>
-            </div>
-            <div className="event-details">
-              <h4>Wedding Photography - Sarah & John</h4>
-              <p className="event-time">10:00 AM - 6:00 PM</p>
-              <p className="event-location">📍 Taj Palace, Mumbai</p>
-              <p className="event-client">👤 Sarah Wilson</p>
-              <div className="event-tags">
-                <span className="tag confirmed">Confirmed</span>
-                <span className="tag budget">₹25,000</span>
-              </div>
-            </div>
-            <div className="event-actions">
-              <button className="action-btn chat">💬</button>
-              <button className="action-btn edit">✏️</button>
-              <button className="action-btn more">⋯</button>
-            </div>
-          </div>
-
-          <div className="event-card">
-            <div className="event-date">
-              <div className="date-day">22</div>
-              <div className="date-month">Dec</div>
-            </div>
-            <div className="event-details">
-              <h4>Corporate Event - Tech Summit</h4>
-              <p className="event-time">2:00 PM - 8:00 PM</p>
-              <p className="event-location">📍 Convention Center, Delhi</p>
-              <p className="event-client">👤 TechCorp India</p>
-              <div className="event-tags">
-                <span className="tag pending">Pending</span>
-                <span className="tag budget">₹15,000</span>
-              </div>
-            </div>
-            <div className="event-actions">
-              <button className="action-btn accept">✅</button>
-              <button className="action-btn decline">❌</button>
-              <button className="action-btn chat">💬</button>
-            </div>
-          </div>
-
-          <div className="event-card">
-            <div className="event-date">
-              <div className="date-day">25</div>
-              <div className="date-month">Dec</div>
-            </div>
-            <div className="event-details">
-              <h4>Fashion Shoot - Vogue Magazine</h4>
-              <p className="event-time">9:00 AM - 5:00 PM</p>
-              <p className="event-location">📍 Studio 5, Bangalore</p>
-              <p className="event-client">👤 Vogue India</p>
-              <div className="event-tags">
-                <span className="tag confirmed">Confirmed</span>
-                <span className="tag budget">₹30,000</span>
-              </div>
-            </div>
-            <div className="event-actions">
-              <button className="action-btn chat">💬</button>
-              <button className="action-btn edit">✏️</button>
-              <button className="action-btn more">⋯</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Booking Requests */}
-      <div className="booking-requests">
-        <div className="section-header">
-          <h2>📋 Booking Requests</h2>
-          <div className="request-filters">
-            <button className="filter-btn active">All (5)</button>
-            <button className="filter-btn">Pending (3)</button>
-            <button className="filter-btn">Accepted (2)</button>
-          </div>
-        </div>
-        <div className="requests-list">
-          <div className="request-card">
-            <div className="request-header">
-              <div className="client-info">
-                <img src="https://images.unsplash.com/photo-1494790108755-2616b612b786?w=50" alt="Client" className="client-avatar" />
-                <div className="client-details">
-                  <h4>Emma Davis</h4>
-                  <p>Birthday Party Photography</p>
-                </div>
-              </div>
-              <div className="request-status pending">Pending</div>
-            </div>
-            <div className="request-details">
-              <p><strong>Date:</strong> Dec 28, 2024</p>
-              <p><strong>Time:</strong> 6:00 PM - 11:00 PM</p>
-              <p><strong>Location:</strong> Grand Hotel, Mumbai</p>
-              <p><strong>Budget:</strong> ₹8,000</p>
-              <p><strong>Message:</strong> "Hi! I'm planning my daughter's Sweet 16 party and would love to have professional photos. Can you please let me know your availability?"</p>
-            </div>
-            <div className="request-actions">
-              <button className="accept-btn">Accept</button>
-              <button className="decline-btn">Decline</button>
-              <button className="message-btn">Message</button>
-            </div>
-          </div>
-
-          <div className="request-card">
-            <div className="request-header">
-              <div className="client-info">
-                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50" alt="Client" className="client-avatar" />
-                <div className="client-details">
-                  <h4>Michael Chen</h4>
-                  <p>Corporate Headshots</p>
-                </div>
-              </div>
-              <div className="request-status accepted">Accepted</div>
-            </div>
-            <div className="request-details">
-              <p><strong>Date:</strong> Jan 5, 2025</p>
-              <p><strong>Time:</strong> 10:00 AM - 2:00 PM</p>
-              <p><strong>Location:</strong> Office Building, Delhi</p>
-              <p><strong>Budget:</strong> ₹12,000</p>
-              <p><strong>Message:</strong> "Need professional headshots for our team of 20 people. Please confirm availability."</p>
-            </div>
-            <div className="request-actions">
-              <button className="message-btn">Message</button>
-              <button className="edit-btn">Edit Details</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderPortfolioManager = () => (
-    <div className="portfolio-manager">
-      <div className="portfolio-header">
-        <h1>📂 Portfolio Manager</h1>
-        <div className="portfolio-actions">
-          <button className="upload-btn">📤 Upload Photos</button>
-          <button className="create-gallery-btn">📁 Create Gallery</button>
-        </div>
-      </div>
-
-      {/* Portfolio Stats */}
-      <div className="portfolio-stats">
-        <div className="stat-item">
-          <div className="stat-number">24</div>
-          <div className="stat-label">Total Galleries</div>
-        </div>
-        <div className="stat-item">
-          <div className="stat-number">1,247</div>
-          <div className="stat-label">Total Photos</div>
-        </div>
-        <div className="stat-item">
-          <div className="stat-number">89</div>
-          <div className="stat-label">Featured Work</div>
-        </div>
-        <div className="stat-item">
-          <div className="stat-number">2.3M</div>
-          <div className="stat-label">Total Views</div>
-        </div>
-      </div>
-
-      {/* Gallery Categories */}
-      <div className="gallery-categories">
-        <h2>Gallery Categories</h2>
-        <div className="category-tabs">
-          <button className="category-tab active">All (24)</button>
-          <button className="category-tab">Wedding (8)</button>
-          <button className="category-tab">Fashion (5)</button>
-          <button className="category-tab">Corporate (4)</button>
-          <button className="category-tab">Event (3)</button>
-          <button className="category-tab">Portrait (2)</button>
-          <button className="category-tab">Real Estate (2)</button>
-        </div>
-      </div>
-
-      {/* Featured Work */}
-      <div className="featured-work-section">
-        <div className="section-header">
-          <h2>⭐ Featured Work</h2>
-          <button className="manage-featured-btn">Manage Featured</button>
-        </div>
-        <div className="featured-grid">
-          <div className="featured-item">
-            <img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=300" alt="Featured 1" />
-            <div className="featured-overlay">
-              <h4>Golden Hour Wedding</h4>
-              <p>Wedding Photography</p>
-              <div className="featured-stats">
-                <span>❤️ 234</span>
-                <span>👁️ 1.2k</span>
-                <span>🔖 45</span>
-              </div>
-            </div>
-          </div>
-          <div className="featured-item">
-            <img src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=300" alt="Featured 2" />
-            <div className="featured-overlay">
-              <h4>Fashion Editorial</h4>
-              <p>Fashion Photography</p>
-              <div className="featured-stats">
-                <span>❤️ 189</span>
-                <span>👁️ 856</span>
-                <span>🔖 32</span>
-              </div>
-            </div>
-          </div>
-          <div className="featured-item">
-            <img src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=300" alt="Featured 3" />
-            <div className="featured-overlay">
-              <h4>Corporate Headshots</h4>
-              <p>Corporate Photography</p>
-              <div className="featured-stats">
-                <span>❤️ 156</span>
-                <span>👁️ 678</span>
-                <span>🔖 28</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Galleries */}
-      <div className="recent-galleries">
-        <div className="section-header">
-          <h2>📁 Recent Galleries</h2>
-          <button className="view-all-btn">View All</button>
-        </div>
-        <div className="galleries-grid">
-          <div className="gallery-card">
-            <div className="gallery-preview">
-              <img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=200" alt="Gallery 1" />
-              <div className="gallery-overlay">
-                <button className="gallery-action">👁️</button>
-                <button className="gallery-action">✏️</button>
-                <button className="gallery-action">⚙️</button>
-              </div>
-            </div>
-            <div className="gallery-info">
-              <h4>Wedding Collection - Sarah & John</h4>
-              <p className="gallery-meta">45 photos • 2 days ago</p>
-              <div className="gallery-tags">
-                <span className="tag">Wedding</span>
-                <span className="tag">Golden Hour</span>
-                <span className="tag">Featured</span>
-              </div>
-              <div className="gallery-stats">
-                <span>❤️ 234</span>
-                <span>👁️ 1.2k</span>
-                <span>🔖 45</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="gallery-card">
-            <div className="gallery-preview">
-              <img src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=200" alt="Gallery 2" />
-              <div className="gallery-overlay">
-                <button className="gallery-action">👁️</button>
-                <button className="gallery-action">✏️</button>
-                <button className="gallery-action">⚙️</button>
-              </div>
-            </div>
-            <div className="gallery-info">
-              <h4>Fashion Editorial - Winter 2024</h4>
-              <p className="gallery-meta">32 photos • 5 days ago</p>
-              <div className="gallery-tags">
-                <span className="tag">Fashion</span>
-                <span className="tag">Editorial</span>
-                <span className="tag">Studio</span>
-              </div>
-              <div className="gallery-stats">
-                <span>❤️ 189</span>
-                <span>👁️ 856</span>
-                <span>🔖 32</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="gallery-card">
-            <div className="gallery-preview">
-              <img src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=200" alt="Gallery 3" />
-              <div className="gallery-overlay">
-                <button className="gallery-action">👁️</button>
-                <button className="gallery-action">✏️</button>
-                <button className="gallery-action">⚙️</button>
-              </div>
-            </div>
-            <div className="gallery-info">
-              <h4>Corporate Event - Tech Summit</h4>
-              <p className="gallery-meta">28 photos • 1 week ago</p>
-              <div className="gallery-tags">
-                <span className="tag">Corporate</span>
-                <span className="tag">Event</span>
-                <span className="tag">Conference</span>
-              </div>
-              <div className="gallery-stats">
-                <span>❤️ 156</span>
-                <span>👁️ 678</span>
-                <span>🔖 28</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="gallery-card">
-            <div className="gallery-preview">
-              <img src="https://images.unsplash.com/photo-1468495244123-6c6a332d66b5?w=200" alt="Gallery 4" />
-              <div className="gallery-overlay">
-                <button className="gallery-action">👁️</button>
-                <button className="gallery-action">✏️</button>
-                <button className="gallery-action">⚙️</button>
-              </div>
-            </div>
-            <div className="gallery-info">
-              <h4>Birthday Party - Emma's Sweet 16</h4>
-              <p className="gallery-meta">38 photos • 2 weeks ago</p>
-              <div className="gallery-tags">
-                <span className="tag">Event</span>
-                <span className="tag">Birthday</span>
-                <span className="tag">Candid</span>
-              </div>
-              <div className="gallery-stats">
-                <span>❤️ 98</span>
-                <span>👁️ 432</span>
-                <span>🔖 15</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Watermark Settings */}
-      <div className="watermark-settings">
-        <h2>🏷️ Watermark Settings</h2>
-        <div className="watermark-options">
-          <div className="watermark-option">
-            <input type="radio" id="no-watermark" name="watermark" defaultChecked />
-            <label htmlFor="no-watermark">No Watermark</label>
-          </div>
-          <div className="watermark-option">
-            <input type="radio" id="text-watermark" name="watermark" />
-            <label htmlFor="text-watermark">Text Watermark</label>
-          </div>
-          <div className="watermark-option">
-            <input type="radio" id="logo-watermark" name="watermark" />
-            <label htmlFor="logo-watermark">Logo Watermark</label>
-          </div>
-        </div>
-        <div className="watermark-preview">
-          <img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=200" alt="Watermark Preview" />
-          <div className="watermark-text">© Your Name</div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderDashboard = () => (
-    <div className="dashboard-main">
-      {/* Welcome Section */}
-      <div className="welcome-section">
-        <h1>Welcome back, {user?.name || 'Photographer'}! 👋</h1>
-        <p>Here's what's happening with your photography business today</p>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="quick-stats">
-        <div className="stat-card">
-          <div className="stat-icon">📅</div>
-          <div className="stat-content">
-            <h3>{upcomingEvents.length}</h3>
-            <p>Upcoming Events</p>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">📸</div>
-          <div className="stat-content">
-            <h3>{recentUploads.length}</h3>
-            <p>Recent Uploads</p>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">💬</div>
-          <div className="stat-content">
-            <h3>{engagementHighlights.bookingInquiries}</h3>
-            <p>New Inquiries</p>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">👥</div>
-          <div className="stat-content">
-            <h3>{engagementHighlights.newFollowers}</h3>
-            <p>New Followers</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="dashboard-grid">
-        {/* Upcoming Events */}
-        <div className="dashboard-card">
-          <div className="card-header">
-            <h2>📅 Upcoming Events</h2>
-            <button className="view-all-btn">View All</button>
-          </div>
-          <div className="events-list">
-            {upcomingEvents.map(event => (
-              <div key={event.id} className="event-item">
+          {upcomingEvents.length > 0 ? (
+            upcomingEvents.map(event => (
+              <div key={event.id} className="event-card">
                 <div className="event-info">
-                  <h4>{event.title}</h4>
-                  <p className="event-details">
-                    📅 {event.date} at {event.time}<br/>
-                    📍 {event.location}<br/>
-                    👤 {event.client}
-                  </p>
-                </div>
-                <div className="event-actions">
-                  <span className={`status-badge ${event.status}`}>{event.status}</span>
-                  <div className="event-budget">{event.budget}</div>
-                </div>
+                  <h4>{event.name}</h4>
+                  <p>📅 {new Date(event.date).toLocaleDateString()} at {event.time}</p>
+                  <p>📍 {event.location}</p>
+                  <p>👤 {event.client}</p>
+                  <p>💰 {event.price}</p>
+          </div>
+                <div className="event-status">
+                  <span className={`status-badge ${event.status}`}>
+                    {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
+                  </span>
+          </div>
+          </div>
+            ))
+          ) : (
+            <div className="no-events">
+              <p>No upcoming events</p>
+              <button className="explore-btn">Explore Opportunities</button>
+          </div>
+          )}
+          </div>
+          </div>
+
+      {/* New Requests */}
+      <div className="panel-section">
+        <h3>🆕 New Requests</h3>
+        <div className="requests-list">
+          {newRequests.filter(req => req.status === 'pending').map(request => (
+            <div key={request.id} className="request-card">
+              <div className="request-info">
+                <h4>{request.clientName}</h4>
+                <p>📅 {new Date(request.date).toLocaleDateString()}</p>
+                <p>📍 {request.location}</p>
+                <p>💰 Budget: {request.budget}</p>
+                <p>{request.description}</p>
+          </div>
+              <div className="request-actions">
+                <button 
+                  className="accept-btn"
+                  onClick={() => handleAcceptRequest(request.id)}
+                >
+                  ✅ Accept
+                </button>
+                <button 
+                  className="decline-btn"
+                  onClick={() => handleDeclineRequest(request.id)}
+                >
+                  ❌ Decline
+                </button>
+          </div>
+          </div>
+          ))}
+            </div>
+          </div>
+
+      {/* Public Requests */}
+      <div className="panel-section">
+        <h3>🌐 Public Requests</h3>
+        <div className="public-requests-list">
+          {publicRequests.filter(req => req.status === 'open').map(request => (
+            <div key={request.id} className="public-request-card">
+              <div className="request-info">
+                <h4>{request.clientName}</h4>
+                <p>📅 {new Date(request.date).toLocaleDateString()}</p>
+                <p>📍 {request.location}</p>
+                <p>💰 Budget: {request.budget}</p>
+                <p>{request.description}</p>
+          </div>
+              <button 
+                className="apply-btn"
+                onClick={() => handleApplyToRequest(request.id)}
+              >
+                📝 Apply
+              </button>
+            </div>
+          ))}
+          </div>
+          </div>
+          </div>
+  );
+
+  const renderJobsSection = () => (
+    <div className="jobs-section">
+      <div className="jobs-header">
+        <div className="jobs-tabs">
+          <button 
+            className={`tab-btn ${jobsTab === 'post' ? 'active' : ''}`}
+            onClick={() => setJobsTab('post')}
+          >
+            📝 Post Request
+          </button>
+          <button 
+            className={`tab-btn ${jobsTab === 'requests' ? 'active' : ''}`}
+            onClick={() => setJobsTab('requests')}
+          >
+            📋 Requests
+          </button>
+            </div>
+          </div>
+
+      {jobsTab === 'post' && (
+        <div className="post-request-section">
+          <div className="post-form">
+            <h3>Post a Job Request</h3>
+            <div className="form-group">
+              <label>Job Title</label>
+              <input type="text" placeholder="e.g., Need Video Editor" />
+          </div>
+            <div className="form-group">
+              <label>Description</label>
+              <textarea placeholder="Describe what you need help with..."></textarea>
+          </div>
+            <div className="form-group">
+              <label>Budget</label>
+              <input type="text" placeholder="₹5,000" />
+          </div>
+            <div className="form-group">
+              <label>Urgency</label>
+              <select>
+                <option>Low</option>
+                <option>Medium</option>
+                <option>High</option>
+              </select>
+          </div>
+            <button className="post-btn">📝 Post Request</button>
+          </div>
+            </div>
+      )}
+
+      {jobsTab === 'requests' && (
+        <div className="requests-section">
+          <div className="my-posts">
+            <h3>My Job Posts</h3>
+            {jobPosts.map(post => (
+              <div key={post.id} className="job-post-card">
+                <div className="post-info">
+                  <h4>{post.title}</h4>
+                  <p>{post.description}</p>
+                  <p>💰 Budget: {post.budget}</p>
+                  <p>📅 Posted {post.timestamp}</p>
+                  <p>💬 {post.replies} replies</p>
+        </div>
+                <div className="post-actions">
+                  <button className="view-replies-btn">View Replies</button>
+                  <button className="edit-btn">Edit</button>
+            </div>
               </div>
             ))}
           </div>
-        </div>
 
-        {/* Recent Uploads */}
-        <div className="dashboard-card">
-          <div className="card-header">
-            <h2>📸 Recent Uploads</h2>
-            <button className="view-all-btn">View All</button>
-          </div>
-          <div className="uploads-list">
-            {recentUploads.map(upload => (
-              <div key={upload.id} className="upload-item">
-                <div className="upload-info">
-                  <h4>{upload.title}</h4>
-                  <p className="upload-category">{upload.category}</p>
-                  <p className="upload-date">{upload.uploadDate}</p>
-                </div>
-                <div className="upload-stats">
-                  <div className="stat">❤️ {upload.likes}</div>
-                  <div className="stat">💬 {upload.comments}</div>
-                  <div className="stat">🔖 {upload.saves}</div>
-                  <div className="stat">👁️ {upload.views}</div>
-                </div>
+          <div className="available-requests">
+            <h3>Available Job Requests</h3>
+            {jobRequests.map(request => (
+              <div key={request.id} className="job-request-card">
+                <div className="request-info">
+                  <h4>{request.title}</h4>
+                  <p>{request.description}</p>
+                  <p>💰 Budget: {request.budget}</p>
+                  <p>👤 Posted by {request.postedBy}</p>
+                  <p>📅 {request.timestamp}</p>
+            </div>
+                <button className="apply-job-btn">Apply</button>
               </div>
             ))}
+            </div>
+            </div>
+      )}
+          </div>
+  );
+
+  const renderPhotoboothSection = () => (
+    <div className="photobooth-section">
+      <Photobooth currentUser={currentUser} showModeSelector={false} />
+    </div>
+  );
+
+  const renderLeftPanelContent = () => {
+    if (leftPanelSubActive) {
+      switch (leftPanelSubActive) {
+        case 'edit-profile':
+          return (
+            <div className="left-panel-content">
+              <div className="edit-profile-header">
+                <h3>Edit Profile</h3>
+                <button 
+                  className="preview-btn"
+                  onClick={() => handleSubNavigation('view-public')}
+                >
+                  👁️ Preview Profile
+                </button>
+      </div>
+
+              <div className="profile-edit-form">
+                {/* Basic Information */}
+                <div className="form-section">
+                  <h4>📋 Basic Information</h4>
+                  <div className="form-group">
+                    <label>Profile Picture</label>
+                    <div className="profile-picture-upload">
+                      <img src={currentUser?.profilePhoto} alt="Current Profile" className="current-profile-img" />
+                      <input type="file" accept="image/*" className="file-input" />
+                      <button className="upload-btn">📷 Change Photo</button>
           </div>
         </div>
-
-        {/* Engagement Highlights */}
-        <div className="dashboard-card">
-          <div className="card-header">
-            <h2>📊 Engagement Highlights</h2>
-          </div>
-          <div className="engagement-stats">
-            <div className="engagement-item">
-              <span className="engagement-icon">🔖</span>
-              <span className="engagement-text">{engagementHighlights.moodboardSaves} new moodboard saves</span>
-            </div>
-            <div className="engagement-item">
-              <span className="engagement-icon">👁️</span>
-              <span className="engagement-text">{engagementHighlights.photoViews} photo views today</span>
-            </div>
-            <div className="engagement-item">
-              <span className="engagement-icon">💬</span>
-              <span className="engagement-text">{engagementHighlights.bookingInquiries} booking inquiries</span>
-            </div>
-            <div className="engagement-item">
-              <span className="engagement-icon">👥</span>
-              <span className="engagement-text">{engagementHighlights.newFollowers} new followers</span>
-            </div>
-            <div className="engagement-item">
-              <span className="engagement-icon">📈</span>
-              <span className="engagement-text">{engagementHighlights.profileVisits} profile visits</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Job Board Preview */}
-        <div className="dashboard-card">
-          <div className="card-header">
-            <h2>💼 Job Board Preview</h2>
-            <button className="view-all-btn">View All</button>
-          </div>
-          <div className="job-list">
-            {jobBoardPreview.map(job => (
-              <div key={job.id} className="job-item">
-                <div className="job-info">
-                  <h4>{job.title}</h4>
-                  <p className="job-details">
-                    📍 {job.location} • 📅 {job.date}<br/>
-                    🏷️ {job.category} • 👤 {job.postedBy}
-                  </p>
+                  <div className="form-group">
+                    <label>Name *</label>
+                    <input type="text" defaultValue={currentUser?.name} placeholder="Your full name" />
                 </div>
-                <div className="job-actions">
-                  <div className="job-budget">{job.budget}</div>
-                  <button className="apply-btn">Apply</button>
-                </div>
+                  <div className="form-group">
+                    <label>Studio/Company Name</label>
+                    <input type="text" defaultValue={currentUser?.studioName || ''} placeholder="Your studio or company name" />
               </div>
-            ))}
+                  <div className="form-group">
+                    <label>Location *</label>
+                    <input type="text" defaultValue={currentUser?.location} placeholder="City, State" />
+            </div>
           </div>
-        </div>
 
-        {/* Leaderboard */}
-        <div className="dashboard-card">
-          <div className="card-header">
-            <h2>🏆 Photographer Leaderboard</h2>
-          </div>
-          <div className="leaderboard">
-            {leaderboardData.map(photographer => (
-              <div key={photographer.rank} className={`leaderboard-item ${photographer.name === user?.name ? 'current-user' : ''}`}>
-                <div className="rank">#{photographer.rank}</div>
-                <div className="photographer-info">
-                  <div className="name">{photographer.name}</div>
-                  <div className="specialty">{photographer.specialty}</div>
+                {/* Professional Details */}
+                <div className="form-section">
+                  <h4>💼 Professional Details</h4>
+                  <div className="form-group">
+                    <label>Bio/About Me *</label>
+                    <textarea 
+                      defaultValue={currentUser?.profileText} 
+                      placeholder="Tell customers about your photography style, experience, and what makes you unique..."
+                      rows={4}
+                    ></textarea>
                 </div>
-                <div className="points">{photographer.points} pts</div>
+                  <div className="form-group">
+                    <label>Specialties *</label>
+                    <input 
+                      type="text" 
+                      defaultValue={currentUser?.specialties?.join(', ')} 
+                      placeholder="Wedding Photography, Portrait Sessions, Event Coverage"
+                    />
+                    <small>Separate specialties with commas</small>
               </div>
-            ))}
+                  <div className="form-group">
+                    <label>Experience (Years)</label>
+                    <input type="number" defaultValue={currentUser?.experience || 0} min="0" max="50" />
+            </div>
+            </div>
+
+                {/* Portfolio Management */}
+                <div className="form-section">
+                  <h4>📸 Portfolio Management</h4>
+      <div className="portfolio-header">
+                    <p>Manage your portfolio photos and showcase your best work</p>
+        <div className="portfolio-actions">
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        multiple 
+                        className="file-input"
+                        onChange={(e) => {
+                          Array.from(e.target.files).forEach(file => handleAddPortfolioPhoto(file));
+                        }}
+                      />
+                      <button className="add-photos-btn">📷 Add Photos</button>
+        </div>
+      </div>
+
+                  <div className="portfolio-grid">
+                    {portfolioPhotos.map(photo => (
+                      <div key={photo.id} className={`portfolio-item ${photo.isFeatured ? 'featured' : ''}`}>
+                        <img src={photo.url} alt="Portfolio" />
+                        <div className="photo-overlay">
+                          <div className="photo-actions">
+                            <select 
+                              value={photo.category}
+                              onChange={(e) => handleUpdatePhotoCategory(photo.id, e.target.value)}
+                              className="category-select"
+                            >
+                              <option value="wedding">Wedding</option>
+                              <option value="portrait">Portrait</option>
+                              <option value="event">Event</option>
+                              <option value="fashion">Fashion</option>
+                              <option value="general">General</option>
+                            </select>
+                            <button 
+                              className={`feature-btn ${photo.isFeatured ? 'featured' : ''}`}
+                              onClick={() => handleToggleFeatured(photo.id)}
+                            >
+                              {photo.isFeatured ? '⭐ Featured' : '⭐ Feature'}
+                            </button>
+                            <button 
+                              className="remove-btn"
+                              onClick={() => handleRemovePortfolioPhoto(photo.id)}
+                            >
+                              🗑️
+                            </button>
+        </div>
+        </div>
+                        {photo.isFeatured && <div className="featured-badge">Featured</div>}
+        </div>
+                    ))}
+        </div>
+      </div>
+
+                {/* Services Management */}
+                <div className="form-section">
+                  <h4>💰 Services & Pricing</h4>
+                  <div className="services-header">
+                    <p>Define your services and pricing packages</p>
+                    <button className="add-service-btn" onClick={handleAddService}>
+                      ➕ Add Service
+                    </button>
+      </div>
+
+                  <div className="services-list">
+                    {services.map(service => (
+                      <div key={service.id} className={`service-item ${service.isActive ? 'active' : 'inactive'}`}>
+                        <div className="service-header">
+                          <h5>{service.name}</h5>
+                          <div className="service-status">
+                            <span className={`status-badge ${service.isActive ? 'active' : 'inactive'}`}>
+                              {service.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                            <button 
+                              className="toggle-btn"
+                              onClick={() => handleToggleServiceActive(service.id)}
+                            >
+                              {service.isActive ? '⏸️' : '▶️'}
+                            </button>
+                            <button 
+                              className="remove-service-btn"
+                              onClick={() => handleRemoveService(service.id)}
+                            >
+                              🗑️
+                            </button>
+        </div>
+              </div>
+                        
+                        <div className="service-fields">
+                          <div className="field-row">
+                            <div className="form-group">
+                              <label>Service Name</label>
+                              <input 
+                                type="text" 
+                                value={service.name}
+                                onChange={(e) => handleUpdateService(service.id, 'name', e.target.value)}
+                              />
+            </div>
+                            <div className="form-group">
+                              <label>Price (₹)</label>
+                              <input 
+                                type="number" 
+                                value={service.price}
+                                onChange={(e) => handleUpdateService(service.id, 'price', parseInt(e.target.value))}
+                                min="0"
+                              />
+        </div>
+      </div>
+
+                          <div className="field-row">
+                            <div className="form-group">
+                              <label>Duration</label>
+                              <input 
+                                type="text" 
+                                value={service.duration}
+                                onChange={(e) => handleUpdateService(service.id, 'duration', e.target.value)}
+                                placeholder="e.g., 2 Hours, Full Day"
+                              />
+        </div>
+                            <div className="form-group">
+                              <label>Category</label>
+                              <select 
+                                value={service.category || 'general'}
+                                onChange={(e) => handleUpdateService(service.id, 'category', e.target.value)}
+                              >
+                                <option value="wedding">Wedding</option>
+                                <option value="portrait">Portrait</option>
+                                <option value="event">Event</option>
+                                <option value="commercial">Commercial</option>
+                                <option value="general">General</option>
+                              </select>
+            </div>
+          </div>
+
+                          <div className="form-group">
+                            <label>Description</label>
+                            <textarea 
+                              value={service.description}
+                              onChange={(e) => handleUpdateService(service.id, 'description', e.target.value)}
+                              placeholder="Describe what's included in this service..."
+                              rows={2}
+                            />
+              </div>
+            </div>
+              </div>
+                    ))}
+            </div>
+          </div>
+
+                {/* Contact & Social */}
+                <div className="form-section">
+                  <h4>📞 Contact & Social</h4>
+                  <div className="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" defaultValue={currentUser?.phone || ''} placeholder="+91 98765 43210" />
+              </div>
+                  <div className="form-group">
+                    <label>Email</label>
+                    <input type="email" defaultValue={currentUser?.email} disabled />
+                    <small>Email cannot be changed</small>
+            </div>
+                  <div className="form-group">
+                    <label>Instagram</label>
+                    <input type="text" defaultValue={currentUser?.instagram || ''} placeholder="@yourusername" />
+              </div>
+                  <div className="form-group">
+                    <label>Website</label>
+                    <input type="url" defaultValue={currentUser?.website || ''} placeholder="https://yourwebsite.com" />
+            </div>
+          </div>
+
+                {/* Availability */}
+                <div className="form-section">
+                  <h4>📅 Availability & Travel</h4>
+                  <div className="form-group">
+                    <label>Available for Travel</label>
+                    <select defaultValue={currentUser?.travelAvailable ? 'yes' : 'no'}>
+                      <option value="yes">Yes, I travel</option>
+                      <option value="no">Local only</option>
+                    </select>
+              </div>
+                  <div className="form-group">
+                    <label>Travel Radius (km)</label>
+                    <input type="number" defaultValue={currentUser?.travelRadius || 50} min="0" max="500" />
+            </div>
+                  <div className="form-group">
+                    <label>Available Days</label>
+                    <div className="days-selector">
+                      {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
+                        <label key={day} className="day-checkbox">
+                          <input type="checkbox" defaultChecked />
+                          <span>{day.slice(0, 3)}</span>
+                        </label>
+                      ))}
           </div>
         </div>
       </div>
+
+                <div className="form-actions">
+                  <button className="save-btn">💾 Save All Changes</button>
+                  <button className="cancel-btn" onClick={() => handleSubNavigation('profile')}>❌ Cancel</button>
+          </div>
+      </div>
     </div>
   );
+        case 'view-public':
+          return (
+            <div className="public-profile-view">
+              <div className="profile-view-header">
+                <h3>View as Public Profile</h3>
+                <p>This is how customers see your profile</p>
+                <div className="profile-actions">
+                  <button className="edit-profile-btn" onClick={() => handleSubNavigation('edit-profile')}>
+                    ✏️ Edit Profile
+                  </button>
+      </div>
+          </div>
+              <div className="public-profile-content">
+                <PhotographerProfile 
+                  photographer={currentUser}
+                  onBack={() => handleSubNavigation('profile')}
+                  onMessage={() => console.log('Message clicked')}
+                />
+        </div>
+          </div>
+          );
+        case 'your-events':
+          return (
+            <div className="left-panel-content">
+              <div className="your-events-header">
+                <h3>Your Events</h3>
+                <p>Manage your photography assignments and media</p>
+              </div>
+              
+              <div className="events-list">
+                {upcomingEvents.map(event => (
+                  <div key={event.id} className="event-item enhanced">
+                    <div className="event-header">
+                      <div className="event-info">
+                        <h4>{event.name}</h4>
+                        <p>📅 {new Date(event.date).toLocaleDateString()} at {event.time}</p>
+                        <p>📍 {event.location}</p>
+                        <p>👤 {event.client}</p>
+                        <p>💰 {event.price}</p>
+                      </div>
+                      <div className="event-status">
+                        <span className={`status-badge ${event.status}`}>
+                          {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Media Management Section */}
+                    <div className="event-media-section">
+                      <div className="media-header">
+                        <h5>📸 Event Media ({eventMedia[event.id]?.length || 0} files)</h5>
+                        <button 
+                          className="add-media-btn"
+                          onClick={() => handleAddMediaToEvent(event.id)}
+                        >
+                          📤 Add Photos/Videos
+                        </button>
+                      </div>
+
+                      {eventMedia[event.id] && eventMedia[event.id].length > 0 ? (
+                        <div className="media-grid">
+                          {eventMedia[event.id].map(media => (
+                            <div key={media.id} className="media-item">
+                              <div className="media-preview">
+                                {media.type === 'photo' ? (
+                                  <img src={media.url} alt={media.name} />
+                                ) : (
+                                  <video poster={media.url} muted>
+                                    <source src={media.url} type="video/mp4" />
+                                  </video>
+                                )}
+                                <div className="media-type-badge">
+                                  {media.type === 'video' ? '🎥' : '📸'}
+                                </div>
+                                <button 
+                                  className="delete-media-btn"
+                                  onClick={() => handleDeleteMedia(event.id, media.id)}
+                                  title="Delete media"
+                                >
+                                  🗑️
+                                </button>
+                              </div>
+                              <div className="media-info">
+                                <p className="media-name">{media.name}</p>
+                                <p className="media-date">
+                                  {new Date(media.uploadedAt).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="no-media">
+                          <p>📷 No media uploaded yet</p>
+                          <button 
+                            className="upload-first-btn"
+                            onClick={() => handleAddMediaToEvent(event.id)}
+                          >
+                            Upload First Photo/Video
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Event Actions */}
+                    <div className="event-actions">
+                      <button 
+                        className="view-event-btn"
+                        onClick={() => console.log('View event details')}
+                      >
+                        👁️ View Details
+                      </button>
+                      <button 
+                        className="manage-event-btn"
+                        onClick={() => console.log('Manage event')}
+                      >
+                        ⚙️ Manage Event
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        case 'public-events':
+          return (
+            <div className="left-panel-content">
+              <h3>Public Events</h3>
+              <div className="events-list">
+                {publicRequests.map(event => (
+                  <div key={event.id} className="event-item">
+                    <h4>{event.eventType} - {event.clientName}</h4>
+                    <p>📅 {new Date(event.date).toLocaleDateString()}</p>
+                    <p>📍 {event.location}</p>
+                    <p>💰 {event.budget}</p>
+                    <button className="apply-btn" onClick={() => handleApplyToRequest(event.id)}>
+                      Apply
+                    </button>
+              </div>
+            ))}
+          </div>
+        </div>
+          );
+        case 'editor':
+          return (
+            <div className="left-panel-content">
+              <h3>Moodboard Editor</h3>
+              <div className="moodboard-editor">
+                <p>Create and edit your moodboards here.</p>
+                <button className="create-btn">➕ Create New Moodboard</button>
+          </div>
+            </div>
+          );
+        case 'public-moodboards':
+          return (
+            <div className="left-panel-content">
+              <h3>Public Moodboards</h3>
+              <div className="moodboards-list">
+                <p>Browse public moodboards from the community.</p>
+                <button className="browse-btn">🔍 Browse Public Moodboards</button>
+            </div>
+            </div>
+          );
+        case 'create-group':
+          return (
+            <div className="left-panel-content">
+              <h3>Create Group</h3>
+              <div className="group-creation">
+                <div className="form-group">
+                  <label>Group Name</label>
+                  <input type="text" placeholder="Enter group name" />
+            </div>
+                <div className="form-group">
+                  <label>Description</label>
+                  <textarea placeholder="Describe your group"></textarea>
+            </div>
+                <button className="create-btn">👥 Create Group</button>
+          </div>
+        </div>
+          );
+        case 'share-work':
+          return (
+            <div className="left-panel-content">
+              <h3>Share Work</h3>
+              <div className="work-sharing">
+                <p>Share your photography work with the community.</p>
+                <button className="share-btn">📤 Share Your Work</button>
+          </div>
+                </div>
+          );
+        case 'collaborate':
+          return (
+            <div className="left-panel-content">
+              <h3>Collaborate</h3>
+              <div className="collaboration">
+                <p>Find collaboration opportunities with other photographers.</p>
+                <button className="collaborate-btn">🤝 Find Collaborations</button>
+                </div>
+              </div>
+          );
+        default:
+          return null;
+      }
+    }
+    return null;
+  };
+
+  const renderMainContent = () => {
+    // If left panel content is active, show it in main content
+    if (leftPanelSubActive) {
+      // For public profile view, use full width
+      if (leftPanelSubActive === 'view-public') {
+        return (
+          <div className="public-profile-main-content">
+            {renderLeftPanelContent()}
+          </div>
+        );
+      }
+      return (
+        <div className="left-panel-main-content">
+          {renderLeftPanelContent()}
+    </div>
+  );
+    }
+
+    switch (activeView) {
+      case 'jobs':
+        return renderJobsSection();
+      case 'requests':
+  return (
+          <div className="requests-main">
+            <h2>Booking Requests</h2>
+            <div className="requests-grid">
+              {newRequests.map(request => (
+                <div key={request.id} className="request-detail-card">
+                  <div className="request-header">
+                    <h3>{request.clientName}</h3>
+                    <span className={`status-badge ${request.status}`}>
+                      {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                    </span>
+          </div>
+                  <div className="request-details">
+                    <p><strong>Event:</strong> {request.eventType}</p>
+                    <p><strong>Date:</strong> {new Date(request.date).toLocaleDateString()}</p>
+                    <p><strong>Location:</strong> {request.location}</p>
+                    <p><strong>Budget:</strong> {request.budget}</p>
+                    <p><strong>Description:</strong> {request.description}</p>
+          </div>
+                  {request.status === 'pending' && (
+                    <div className="request-actions">
+            <button 
+                        className="accept-btn"
+                        onClick={() => handleAcceptRequest(request.id)}
+            >
+                        ✅ Accept Request
+            </button>
+            <button 
+                        className="decline-btn"
+                        onClick={() => handleDeclineRequest(request.id)}
+            >
+                        ❌ Decline Request
+            </button>
+        </div>
+                  )}
+        </div>
+              ))}
+            </div>
+            </div>
+        );
+      case 'photobooth':
+        return renderPhotoboothSection();
+      default:
+        return renderMiddleSection();
+    }
+  };
 
   return (
     <div className="photographer-dashboard">
-      {/* Header */}
-      <div className="dashboard-header">
-        <div className="header-left">
-          <div className="logo">
-            <h2>📸 Chitrasethu Pro</h2>
-          </div>
-          <div className="search-bar">
-            <input
-              type="text"
-              placeholder="Search gigs, clients, events..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <button className="search-btn">🔍</button>
-          </div>
-        </div>
-        <div className="header-right">
-          <button className="header-action-btn" title="Upload Photos">📤</button>
-          <button className="header-action-btn" title="Calendar">📅</button>
-          <button className="header-action-btn" title="Messages">💬</button>
-          <button className="header-action-btn" title="Notifications">🔔</button>
-          <button className="header-action-btn" title="Profile">⚙️</button>
-        </div>
-      </div>
-
+      {renderHeader()}
+      
       <div className="dashboard-content">
-        {/* Left Sidebar */}
-        <div className="left-sidebar">
-          <nav className="sidebar-nav">
-            <button 
-              className={`nav-item ${activeSection === 'dashboard' ? 'active' : ''}`}
-              onClick={() => setActiveSection('dashboard')}
-            >
-              <span className="nav-icon">🏠</span>
-              <span className="nav-text">Dashboard</span>
-            </button>
-            <button 
-              className={`nav-item ${activeSection === 'portfolio' ? 'active' : ''}`}
-              onClick={() => setActiveSection('portfolio')}
-            >
-              <span className="nav-icon">📂</span>
-              <span className="nav-text">My Portfolio</span>
-            </button>
-            <button 
-              className={`nav-item ${activeSection === 'events' ? 'active' : ''}`}
-              onClick={() => setActiveSection('events')}
-            >
-              <span className="nav-icon">📅</span>
-              <span className="nav-text">Events & Bookings</span>
-            </button>
-            <button 
-              className={`nav-item ${activeSection === 'jobboard' ? 'active' : ''}`}
-              onClick={() => setActiveSection('jobboard')}
-            >
-              <span className="nav-icon">💼</span>
-              <span className="nav-text">Job Board</span>
-            </button>
-            <button 
-              className={`nav-item ${activeSection === 'analytics' ? 'active' : ''}`}
-              onClick={() => setActiveSection('analytics')}
-            >
-              <span className="nav-icon">📊</span>
-              <span className="nav-text">Analytics</span>
-            </button>
-            <button 
-              className={`nav-item ${activeSection === 'community' ? 'active' : ''}`}
-              onClick={() => setActiveSection('community')}
-            >
-              <span className="nav-icon">👥</span>
-              <span className="nav-text">Community</span>
-            </button>
-            <button 
-              className={`nav-item ${activeSection === 'learning' ? 'active' : ''}`}
-              onClick={() => setActiveSection('learning')}
-            >
-              <span className="nav-icon">🎓</span>
-              <span className="nav-text">Learning Hub</span>
-            </button>
-            <button 
-              className={`nav-item ${activeSection === 'wallet' ? 'active' : ''}`}
-              onClick={() => setActiveSection('wallet')}
-            >
-              <span className="nav-icon">💰</span>
-              <span className="nav-text">Wallet & Earnings</span>
-            </button>
-            <button 
-              className={`nav-item ${activeSection === 'settings' ? 'active' : ''}`}
-              onClick={() => setActiveSection('settings')}
-            >
-              <span className="nav-icon">⚙️</span>
-              <span className="nav-text">Settings</span>
-            </button>
-          </nav>
-        </div>
-
-        {/* Main Content */}
-        <div className="main-content">
-          {activeSection === 'dashboard' && renderDashboard()}
-          {activeSection === 'portfolio' && renderPortfolioManager()}
-          {activeSection === 'events' && renderEventsBookings()}
-          {activeSection === 'jobboard' && <div className="coming-soon">Job Board - Coming Soon</div>}
-          {activeSection === 'analytics' && <div className="coming-soon">Analytics - Coming Soon</div>}
-          {activeSection === 'community' && <div className="coming-soon">Community - Coming Soon</div>}
-          {activeSection === 'learning' && <div className="coming-soon">Learning Hub - Coming Soon</div>}
-          {activeSection === 'wallet' && <div className="coming-soon">Wallet & Earnings - Coming Soon</div>}
-          {activeSection === 'settings' && <div className="coming-soon">Settings - Coming Soon</div>}
-        </div>
-
-        {/* Right Sidebar */}
-        <div className="right-sidebar">
-          <div className="notifications-section">
-            <h3>🔔 Notifications</h3>
-            <div className="notification-item">
-              <span className="notification-text">New moodboard save on your wedding collection</span>
-              <span className="notification-time">2m ago</span>
+        <div className={`dashboard-layout ${leftPanelSubActive === 'view-public' ? 'public-profile-layout' : ''}`}>
+          {leftPanelSubActive !== 'view-public' && (
+            <div className="left-panel-container">
+              {renderLeftPanel()}
             </div>
-            <div className="notification-item">
-              <span className="notification-text">Booking inquiry from Sarah Wilson</span>
-              <span className="notification-time">1h ago</span>
-            </div>
-            <div className="notification-item">
-              <span className="notification-text">New follower: Alex Chen</span>
-              <span className="notification-time">3h ago</span>
-            </div>
+          )}
+          
+          <div className="main-content">
+            {renderMainContent()}
           </div>
 
-          <div className="quick-actions">
-            <h3>⚡ Quick Actions</h3>
-            <button className="quick-action-btn">📤 Upload Photos</button>
-            <button className="quick-action-btn">💼 Apply for Gig</button>
-            <button className="quick-action-btn">💰 Check Earnings</button>
-            <button className="quick-action-btn">📊 View Analytics</button>
+          {leftPanelSubActive !== 'view-public' && (
+            <div className="right-panel-container">
+              {renderRightPanel()}
           </div>
-
-          <div className="tips-section">
-            <h3>💡 Tip of the Day</h3>
-            <p>Golden hour photography (1 hour after sunrise or before sunset) creates the most flattering natural light for portraits. Plan your shoots accordingly!</p>
-          </div>
+          )}
         </div>
       </div>
+
+      {/* Media Upload Modal */}
+      {mediaUploadModal && (
+        <div className="media-upload-modal">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>📤 Upload Media to Event</h3>
+              <button 
+                className="close-btn"
+                onClick={() => {
+                  setMediaUploadModal(false);
+                  setSelectedEventForMedia(null);
+                  setSelectedFiles([]);
+                }}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              {selectedEventForMedia && (
+                <div className="selected-event-info">
+                  <h4>Event: {upcomingEvents.find(e => e.id === selectedEventForMedia)?.name}</h4>
+                  <p>📅 {new Date(upcomingEvents.find(e => e.id === selectedEventForMedia)?.date).toLocaleDateString()}</p>
+                </div>
+              )}
+
+              <div className="file-upload-area">
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*,video/*"
+                  onChange={handleFileSelect}
+                  className="file-input"
+                  id="media-upload"
+                />
+                <label htmlFor="media-upload" className="upload-label">
+                  <div className="upload-icon">📷</div>
+                  <h4>Choose Photos & Videos</h4>
+                  <p>Select multiple files to upload</p>
+                  <div className="upload-stats">
+                    <span>Max file size: 100MB per file</span>
+                    <span>Supported: JPG, PNG, MP4, MOV</span>
+                  </div>
+                </label>
+              </div>
+
+              {selectedFiles.length > 0 && (
+                <div className="selected-files-preview">
+                  <h4>Selected Files ({selectedFiles.length})</h4>
+                  <div className="files-preview">
+                    {selectedFiles.map((file, index) => (
+                      <div key={index} className="file-preview-item">
+                        <div className="file-icon">
+                          {file.type.startsWith('video/') ? '🎥' : '📸'}
+                        </div>
+                        <div className="file-details">
+                          <p className="file-name">{file.name}</p>
+                          <p className="file-size">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                        </div>
+                        <button 
+                          className="remove-file-btn"
+                          onClick={() => setSelectedFiles(files => files.filter((_, i) => i !== index))}
+                        >
+                          ❌
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="modal-footer">
+              <button 
+                className="cancel-btn"
+                onClick={() => {
+                  setMediaUploadModal(false);
+                  setSelectedEventForMedia(null);
+                  setSelectedFiles([]);
+                }}
+              >
+                Cancel
+              </button>
+              <button 
+                className="upload-btn"
+                onClick={handleUploadMedia}
+                disabled={selectedFiles.length === 0}
+              >
+                📤 Upload {selectedFiles.length} File{selectedFiles.length !== 1 ? 's' : ''}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

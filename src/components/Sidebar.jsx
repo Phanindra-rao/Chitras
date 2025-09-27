@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import '../css/Sidebar.css';
+npm import '../css/Sidebar.css';
 
 function Sidebar({ user, requests, quotes, onNewQuote }) {
   const [mediaUrl, setMediaUrl] = useState('');

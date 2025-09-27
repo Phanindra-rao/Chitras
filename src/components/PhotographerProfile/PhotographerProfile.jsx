@@ -74,11 +74,14 @@ function PhotographerProfile({ photographer, onBack, onMessage }) {
   // Professional Portfolio Categories
   const portfolioCategories = [
     { id: 'all', name: 'All Work', icon: '📷' },
-    { id: 'fashion', name: 'Fashion Brands', icon: '👗' },
+    { id: 'fashion', name: 'Fashion', icon: '👗' },
+    { id: 'wedding', name: 'Wedding', icon: '💒' },
+    { id: 'festive', name: 'Festive', icon: '🎉' },
+    { id: 'most-liked', name: 'Most Liked', icon: '❤️' },
+    { id: 'suggested', name: 'Chitrasethu Suggested', icon: '✨' },
     { id: 'realestate', name: 'Real Estate', icon: '🏠' },
     { id: 'product', name: 'Product Shoots', icon: '📦' },
     { id: 'corporate', name: 'Corporate', icon: '💼' },
-    { id: 'wedding', name: 'Weddings', icon: '💒' },
     { id: 'portrait', name: 'Portraits', icon: '👤' }
   ];
 
@@ -248,12 +251,90 @@ function PhotographerProfile({ photographer, onBack, onMessage }) {
       client: 'Artists & Models',
       year: '2023',
       features: ['Creative Lighting', 'Artistic Vision', 'Unique Style']
+    },
+    // Festive Events
+    {
+      id: 17,
+      category: 'festive',
+      title: 'Diwali Celebration',
+      description: 'Traditional festival photography with vibrant colors',
+      image: 'https://images.unsplash.com/photo-1606800052052-a08af7148866?w=400',
+      client: 'Community Events',
+      year: '2024',
+      features: ['Cultural Photography', 'Festive Colors', 'Traditional Moments'],
+      likes: 156
+    },
+    {
+      id: 18,
+      category: 'festive',
+      title: 'Holi Festival',
+      description: 'Colorful Holi celebration photography',
+      image: 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=400',
+      client: 'Festival Organizers',
+      year: '2024',
+      features: ['Action Photography', 'Colorful Moments', 'Festive Spirit'],
+      likes: 203
+    },
+    // Most Liked (high engagement)
+    {
+      id: 19,
+      category: 'most-liked',
+      title: 'Golden Hour Wedding',
+      description: 'Stunning wedding photography during golden hour',
+      image: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=400',
+      client: 'Private Clients',
+      year: '2024',
+      features: ['Golden Hour', 'Romantic Lighting', 'Natural Beauty'],
+      likes: 342
+    },
+    {
+      id: 20,
+      category: 'most-liked',
+      title: 'Fashion Editorial',
+      description: 'High-end fashion photography for magazine',
+      image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400',
+      client: 'Vogue India',
+      year: '2024',
+      features: ['Editorial Style', 'Professional Models', 'High Fashion'],
+      likes: 289
+    },
+    // Chitrasethu Suggested (curated)
+    {
+      id: 21,
+      category: 'suggested',
+      title: 'Corporate Headshots',
+      description: 'Professional corporate photography',
+      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+      client: 'Fortune 500 Companies',
+      year: '2024',
+      features: ['Professional Style', 'Corporate Branding', 'Executive Portraits'],
+      likes: 178
+    },
+    {
+      id: 22,
+      category: 'suggested',
+      title: 'Product Photography',
+      description: 'Clean and modern product photography',
+      image: 'https://images.unsplash.com/photo-1468495244123-6c6a332d66b5?w=400',
+      client: 'E-commerce Brands',
+      year: '2024',
+      features: ['Clean Background', 'Product Focus', 'Marketing Ready'],
+      likes: 165
     }
   ];
 
-  const filteredPortfolioItems = activePortfolioFilter === 'all' 
-    ? portfolioItems 
-    : portfolioItems.filter(item => item.category === activePortfolioFilter);
+  const filteredPortfolioItems = (() => {
+    switch (activePortfolioFilter) {
+      case 'all':
+        return portfolioItems;
+      case 'most-liked':
+        return portfolioItems.filter(item => item.likes && item.likes > 200);
+      case 'suggested':
+        return portfolioItems.filter(item => item.category === 'suggested');
+      default:
+        return portfolioItems.filter(item => item.category === activePortfolioFilter);
+    }
+  })();
 
   console.log('PhotographerProfile rendered, showBooking:', showBooking);
 
@@ -279,6 +360,7 @@ function PhotographerProfile({ photographer, onBack, onMessage }) {
               </div>
               <div className="hero-info">
                 <h1>{photographer.name}</h1>
+                <p className="studio-name">{photographer.studio || photographer.company || 'Independent Photographer'}</p>
                 <p className="tagline">Professional Photographer & Visual Storyteller</p>
                 <div className="location-info">
                   <span className="location-icon">📍</span>
@@ -312,15 +394,15 @@ function PhotographerProfile({ photographer, onBack, onMessage }) {
           <div className="profile-actions">
             <button className="book-button" onClick={handleBookNow}>
               <span className="btn-icon">📅</span>
-              Book Now
+              Booking
+            </button>
+            <button className="chat-button" onClick={() => onMessage(photographer.id)}>
+              <span className="btn-icon">💬</span>
+              Chat
             </button>
             <button className="call-button" onClick={handleCall} disabled={isCalling}>
               <span className="btn-icon">📞</span>
               {isCalling ? 'Calling...' : 'Call'}
-            </button>
-            <button className="message-button" onClick={() => onMessage(photographer.id)}>
-              <span className="btn-icon">💬</span>
-              Message
             </button>
           </div>
 

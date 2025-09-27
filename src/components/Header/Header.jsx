@@ -35,6 +35,12 @@ function Header({ setView, currentUser, onSignOut, onMessagingToggle, searchQuer
               <button onClick={() => handleNavigation('community-buzz')} className="nav-btn community-buzz-nav-btn">
                 🎉 Community Buzz
               </button>
+              <button onClick={() => handleNavigation('photobooth')} className="nav-btn photobooth-nav-btn">
+                📸 Photobooth
+              </button>
+              <button onClick={() => handleNavigation('maps')} className="nav-btn">
+                🗺️ Maps
+              </button>
             </nav>
           )}
         </div>
@@ -56,6 +62,10 @@ function Header({ setView, currentUser, onSignOut, onMessagingToggle, searchQuer
         <div className="header-right">
           {currentUser ? (
             <div className="user-menu">
+              <button onClick={onMessagingToggle} className="messenger-btn">
+                <span className="messenger-icon">💬</span>
+                <span className="messenger-text">Messages</span>
+              </button>
               <button onClick={() => handleNavigation('profile')} className="profile-btn">
                 <img src={currentUser.profilePhoto || 'https://via.placeholder.com/32'} alt="Profile" className="profile-photo" />
                 <span>{currentUser.name}</span>

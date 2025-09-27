@@ -261,6 +261,216 @@
   }
 }
 
+/* Enhanced Signup Form Styles */
+.photo-upload-container {
+  position: relative;
+  margin-bottom: var(--spacing-lg);
+}
+
+.photo-input {
+  display: none;
+}
+
+.photo-upload-btn {
+  display: block;
+  width: 100%;
+  padding: var(--spacing-lg);
+  border: 2px dashed var(--surface-tertiary);
+  border-radius: var(--border-radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-duration) ease;
+  background: var(--surface-color);
+  text-align: center;
+}
+
+.photo-upload-btn:hover {
+  border-color: var(--primary-color);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.photo-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--text-secondary);
+}
+
+.photo-icon {
+  font-size: 2rem;
+}
+
+.photo-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.photo-preview img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--primary-color);
+}
+
+.photo-preview span {
+  color: var(--primary-color);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Portfolio Upload Styles */
+.portfolio-upload-container {
+  margin-bottom: var(--spacing-lg);
+}
+
+.portfolio-input {
+  display: none;
+}
+
+.portfolio-upload-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 2px dashed var(--surface-tertiary);
+  border-radius: var(--border-radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-duration) ease;
+  background: var(--surface-color);
+  color: var(--text-secondary);
+}
+
+.portfolio-upload-btn:hover {
+  border-color: var(--primary-color);
+  background: rgba(59, 130, 246, 0.05);
+  color: var(--primary-color);
+}
+
+.upload-icon {
+  font-size: 1.2rem;
+}
+
+.portfolio-preview {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: rgba(59, 130, 246, 0.05);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.portfolio-preview p {
+  margin: 0 0 var(--spacing-sm) 0;
+  color: var(--text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.portfolio-thumbnails {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.portfolio-thumbnails img {
+  width: 50px;
+  height: 50px;
+  border-radius: var(--border-radius-md);
+  object-fit: cover;
+  border: 2px solid var(--primary-color);
+}
+
+.more-count {
+  background: var(--primary-color);
+  color: white;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Specialties Grid */
+.specialties-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+}
+
+.specialty-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  border: 1px solid var(--surface-tertiary);
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  transition: all var(--transition-duration) ease;
+  background: var(--surface-color);
+  font-weight: var(--font-weight-normal);
+  text-transform: none;
+  margin-bottom: 0;
+}
+
+.specialty-checkbox:hover {
+  border-color: var(--primary-color);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.specialty-checkbox input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  accent-color: var(--primary-color);
+}
+
+.specialty-checkbox input[type="checkbox"]:checked + span {
+  color: var(--primary-color);
+  font-weight: var(--font-weight-medium);
+}
+
+.specialty-checkbox:has(input[type="checkbox"]:checked) {
+  border-color: var(--primary-color);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+/* Select Dropdown */
+.login select {
+  width: 100%;
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  border: 2px solid var(--surface-tertiary);
+  border-radius: var(--border-radius-lg);
+  font-size: var(--font-size-base);
+  background: var(--surface-color);
+  transition: all var(--transition-duration) ease;
+  color: var(--text-primary);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+}
+
+.login select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  background: var(--surface-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  transform: translateY(-2px);
+}
+
+.login select option {
+  background: var(--surface-color);
+  color: var(--text-primary);
+  padding: var(--spacing-sm);
+}
+
+/* Textarea */
+.login textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+}
+
 @media (max-width: 480px) {
   .login {
     padding: var(--spacing-sm);
@@ -271,7 +481,8 @@
   }
   
   .login input,
-  .login textarea {
+  .login textarea,
+  .login select {
     padding: var(--spacing-sm);
     font-size: var(--font-size-sm);
   }
@@ -279,5 +490,19 @@
   .login button[type="submit"] {
     padding: var(--spacing-sm);
     font-size: var(--font-size-sm);
+  }
+  
+  .specialties-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .photo-preview img {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .portfolio-thumbnails img {
+    width: 40px;
+    height: 40px;
   }
 }

@@ -5,11 +5,14 @@ function EventPhotos({
   currentUser, 
   photographers, 
   onPhotographerSelect,
-  onSaveToMoodboard 
+  onSaveToMoodboard,
+  onNavigateToPhotographer
 }) {
   const [activeTab, setActiveTab] = useState('my-events');
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [uploadModal, setUploadModal] = useState(false);
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [sortBy, setSortBy] = useState('recent');
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploadData, setUploadData] = useState({
     eventId: '',
@@ -17,16 +20,28 @@ function EventPhotos({
     tags: '',
     isWatermarked: false,
     price: 0,
-    isCustomerUpload: false
+    isCustomerUpload: false,
+    category: 'general',
+    isFeatured: false,
+    clientApproval: 'pending',
+    deliveryDate: '',
+    resolution: 'high',
+    format: 'jpeg'
   });
+  
+  const [uploadProgress, setUploadProgress] = useState({});
+  const [uploadQueue, setUploadQueue] = useState([]);
+  const [isUploading, setIsUploading] = useState(false);
   const [tagModal, setTagModal] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [commentModal, setCommentModal] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [challengeModal, setChallengeModal] = useState(false);
   const [downloadModal, setDownloadModal] = useState(false);
-  const [filterType, setFilterType] = useState('all');
-  const [sortBy, setSortBy] = useState('recent');
+  const [liveEvents, setLiveEvents] = useState([]);
+  const [autoUploadEnabled, setAutoUploadEnabled] = useState(true);
+  const [viewerModal, setViewerModal] = useState(false);
+  const [viewingMedia, setViewingMedia] = useState(null);
 
   // Sample event data
   const [events] = useState([
@@ -94,6 +109,24 @@ function EventPhotos({
       notifications: [],
       challenges: [],
       leaderboard: null
+    },
+    {
+      id: 4,
+      name: 'Live Music Festival',
+      date: '2024-12-18',
+      location: 'Mumbai, Maharashtra',
+      organizer: 'Live Events Co',
+      status: 'live',
+      coverImage: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400',
+      photographers: [1, 2, 3],
+      totalPhotos: 45,
+      totalVideos: 3,
+      isPublic: true,
+      notifications: ['Live photos are being uploaded automatically!'],
+      challenges: [],
+      leaderboard: null,
+      isLive: true,
+      autoUpload: true
     }
   ]);
 
@@ -250,28 +283,122 @@ function EventPhotos({
         },
         isVR: false
       }
+    ],
+    4: [
+      {
+        id: 23,
+        type: 'photo',
+        url: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400',
+        photographerId: 1,
+        photographerName: 'John Doe',
+        description: 'Live performance moment',
+        likes: 12,
+        loves: 3,
+        fires: 5,
+        comments: [],
+        isApproved: true,
+        isHighlighted: false,
+        isWatermarked: false,
+        price: 0,
+        tags: ['live', 'music', 'performance'],
+        peopleTags: [],
+        uploadedAt: new Date().toISOString(),
+        isCustomerUpload: false,
+        challengeVotes: 0,
+        downloadOptions: {
+          free: { resolution: '800x600', format: 'JPG' },
+          premium: { resolution: '4000x3000', format: 'RAW', price: 200 }
+        },
+        isVR: false,
+        isLiveUpload: true
+      },
+      {
+        id: 24,
+        type: 'photo',
+        url: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400',
+        photographerId: 2,
+        photographerName: 'Jane Smith',
+        description: 'Crowd energy',
+        likes: 8,
+        loves: 2,
+        fires: 3,
+        comments: [],
+        isApproved: true,
+        isHighlighted: false,
+        isWatermarked: false,
+        price: 0,
+        tags: ['live', 'crowd', 'energy'],
+        peopleTags: [],
+        uploadedAt: new Date(Date.now() - 300000).toISOString(), // 5 minutes ago
+        isCustomerUpload: false,
+        challengeVotes: 0,
+        downloadOptions: {
+          free: { resolution: '800x600', format: 'JPG' },
+          premium: { resolution: '4000x3000', format: 'RAW', price: 200 }
+        },
+        isVR: false,
+        isLiveUpload: true
+      }
     ]
   });
 
   const [userEvents, setUserEvents] = useState(events);
-  const [notifications, setNotifications] = useState([
-    'Photos from XYZ Music Concert are now live – view & download your moments!',
-    'Tech Conference 2024 photos are ready! Check out your professional moments.'
-  ]);
 
-  const tabs = [
+  // Filtering and sorting logic
+  const getFilteredAndSortedEvents = () => {
+    let currentEvents = [...userEvents];
+    
+    // Apply status filter
+    if (filterStatus !== 'all') {
+      currentEvents = currentEvents.filter(event => event.status === filterStatus);
+    }
+    
+    // Apply sorting
+    const sortedEvents = [...currentEvents].sort((a, b) => {
+      switch (sortBy) {
+        case 'recent':
+          return new Date(b.date) - new Date(a.date);
+        case 'oldest':
+          return new Date(a.date) - new Date(b.date);
+        case 'participants':
+          return b.photographers.length - a.photographers.length;
+        case 'photos':
+          return b.totalPhotos - a.totalPhotos;
+        case 'alphabetical':
+          return a.name.localeCompare(b.name);
+        default:
+          return 0;
+      }
+    });
+    
+    return sortedEvents;
+  };
+
+  const filteredEvents = getFilteredAndSortedEvents();
+
+  // Different tabs based on user role
+  const getTabs = () => {
+    if (currentUser?.role === 'photographer') {
+      return [
     { id: 'my-events', label: 'My Events', icon: '📅' },
-    { id: 'upload', label: 'Upload Media', icon: '📤' },
-    { id: 'notifications', label: 'Notifications', icon: '🔔' },
-    { id: 'gallery', label: 'Public Gallery', icon: '🖼️' },
+        { id: 'photographer-upload', label: 'Upload Photos', icon: '📤' },
+        { id: 'live-photos', label: 'Live Photos', icon: '🔴' },
+        { id: 'past-events', label: 'Past Events', icon: '📚' },
     { id: 'challenges', label: 'Photo Challenges', icon: '🏆' },
     { id: 'leaderboard', label: 'Leaderboard', icon: '🏅' }
   ];
-
-  const handleFileSelect = (e) => {
-    const files = Array.from(e.target.files);
-    setSelectedFiles(files);
+    } else {
+      return [
+        { id: 'my-events', label: 'My Events', icon: '📅' },
+        { id: 'live-photos', label: 'Live Photos', icon: '🔴' },
+        { id: 'past-events', label: 'Past Events', icon: '📚' },
+        { id: 'challenges', label: 'Photo Challenges', icon: '🏆' },
+        { id: 'leaderboard', label: 'Leaderboard', icon: '🏅' }
+      ];
+    }
   };
+
+  const tabs = getTabs();
 
   const handleUpload = () => {
     if (selectedFiles.length > 0 && uploadData.eventId) {
@@ -286,9 +413,86 @@ function EventPhotos({
         tags: '',
         isWatermarked: false,
         price: 0,
-        isCustomerUpload: false
+        isCustomerUpload: false,
+        category: 'general',
+        isFeatured: false,
+        clientApproval: 'pending',
+        deliveryDate: '',
+        resolution: 'high',
+        format: 'jpeg'
       });
     }
+  };
+
+  const handleProfessionalUpload = async () => {
+    if (selectedFiles.length === 0 || !uploadData.eventId) {
+      alert('Please select files and choose an event');
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadQueue(selectedFiles);
+
+    // Simulate professional upload process
+    for (let i = 0; i < selectedFiles.length; i++) {
+      const file = selectedFiles[i];
+      const fileId = `file_${Date.now()}_${i}`;
+      
+      // Simulate upload progress
+      for (let progress = 0; progress <= 100; progress += 10) {
+        setUploadProgress(prev => ({
+          ...prev,
+          [fileId]: progress
+        }));
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      // Simulate processing
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    // Complete upload
+    setIsUploading(false);
+    setUploadQueue([]);
+    setUploadProgress({});
+    setSelectedFiles([]);
+    
+    // Reset form
+    setUploadData({
+      eventId: '',
+      description: '',
+      tags: '',
+      isWatermarked: false,
+      price: 0,
+      isCustomerUpload: false,
+      category: 'general',
+      isFeatured: false,
+      clientApproval: 'pending',
+      deliveryDate: '',
+      resolution: 'high',
+      format: 'jpeg'
+    });
+
+    alert(`Successfully uploaded ${selectedFiles.length} photos to ${events.find(e => e.id == uploadData.eventId)?.name}`);
+  };
+
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    setSelectedFiles(files);
+    
+    // Auto-generate tags based on file names
+    const autoTags = files.map(file => {
+      const name = file.name.toLowerCase();
+      if (name.includes('wedding')) return 'wedding';
+      if (name.includes('portrait')) return 'portrait';
+      if (name.includes('event')) return 'event';
+      return 'general';
+    }).filter((tag, index, arr) => arr.indexOf(tag) === index);
+    
+    setUploadData(prev => ({
+      ...prev,
+      tags: autoTags.join(', ')
+    }));
   };
 
   const handleReaction = (mediaId, reactionType) => {
@@ -358,25 +562,623 @@ function EventPhotos({
     // Here you would implement highlighting
   };
 
+  const handlePhotoClick = (media) => {
+    console.log('Photo clicked, redirecting to photographer:', media.photographerId);
+    if (onNavigateToPhotographer) {
+      onNavigateToPhotographer(media.photographerId);
+    }
+  };
+
+  const handleMediaView = (media) => {
+    setViewingMedia(media);
+    setViewerModal(true);
+  };
+
+  // Auto-upload functionality for live events
+  useEffect(() => {
+    const liveEventsList = events.filter(event => event.isLive && event.autoUpload);
+    setLiveEvents(liveEventsList);
+
+    if (autoUploadEnabled && liveEventsList.length > 0) {
+      const interval = setInterval(() => {
+        // Simulate automatic photo uploads for live events
+        liveEventsList.forEach(event => {
+          const newPhoto = {
+            id: Date.now() + Math.random(),
+            type: 'photo',
+            url: `https://images.unsplash.com/photo-${Math.floor(Math.random() * 1000000)}?w=400`,
+            photographerId: event.photographers[Math.floor(Math.random() * event.photographers.length)],
+            photographerName: photographers.find(p => p.id === event.photographers[Math.floor(Math.random() * event.photographers.length)])?.name || 'Unknown',
+            description: `Live moment captured at ${event.name}`,
+            likes: 0,
+            loves: 0,
+            fires: 0,
+            comments: [],
+            isApproved: true,
+            isHighlighted: false,
+            isWatermarked: false,
+            price: 0,
+            tags: ['live', 'auto-upload'],
+            peopleTags: [],
+            uploadedAt: new Date().toISOString(),
+            isCustomerUpload: false,
+            challengeVotes: 0,
+            downloadOptions: {
+              free: { resolution: '800x600', format: 'JPG' },
+              premium: { resolution: '4000x3000', format: 'RAW', price: 200 }
+            },
+            isVR: false,
+            isLiveUpload: true
+          };
+
+          // Update event media
+          setUserEvents(prevEvents => 
+            prevEvents.map(e => 
+              e.id === event.id 
+                ? { ...e, totalPhotos: e.totalPhotos + 1 }
+                : e
+            )
+          );
+
+          // Add notification
+          setNotifications(prev => [
+            `New live photo uploaded to ${event.name}!`,
+            ...prev
+          ]);
+
+          console.log('Auto-uploaded photo for live event:', event.name, newPhoto);
+        });
+      }, 30000); // Upload every 30 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [autoUploadEnabled, photographers]);
+
+  const renderLivePhotos = () => (
+    <div className="live-photos">
+      <div className="section-header">
+        <h2>🔴 Live Event Photos</h2>
+        <p>Real-time photos from ongoing events</p>
+      </div>
+      
+      {liveEvents.length > 0 ? (
+        <div className="live-events-grid">
+          {liveEvents.map(event => (
+            <div key={event.id} className="live-event-card">
+              <div className="live-event-header">
+                <div className="live-event-info">
+                  <h3>{event.name}</h3>
+                  <p>📍 {event.location}</p>
+                  <div className="live-status">
+                    <span className="live-dot"></span>
+                    <span>LIVE NOW</span>
+                  </div>
+                </div>
+                <div className="live-stats">
+                  <span>📸 {event.totalPhotos} photos</span>
+                  <span>🎥 {event.totalVideos} videos</span>
+                </div>
+              </div>
+              
+              <div className="live-photos-grid">
+                {eventMedia[event.id]?.filter(media => media.isLiveUpload).map(media => (
+                  <div key={media.id} className="live-photo-item">
+                    <div className="media-container" onClick={() => handleMediaView(media)}>
+                      {media.type === 'photo' ? (
+                        <img 
+                          src={media.url} 
+                          alt={media.description} 
+                          style={{ cursor: 'pointer' }}
+                          title="Click to view full size"
+                        />
+                      ) : media.type === 'video' ? (
+                        <video 
+                          poster={media.thumbnail} 
+                          style={{ cursor: 'pointer' }}
+                          title="Click to view full size"
+                        >
+                          <source src={media.url} type="video/mp4" />
+                        </video>
+                      ) : (
+                        <img 
+                          src={media.thumbnail || media.url} 
+                          alt={media.description} 
+                          style={{ cursor: 'pointer' }}
+                          title="Click to view full size"
+                        />
+                      )}
+                      <div className="live-badge">LIVE</div>
+                      <div className="upload-time">
+                        {new Date(media.uploadedAt).toLocaleTimeString()}
+                      </div>
+                      <div className="media-type-badge">
+                        {media.type === 'video' ? '🎥' : media.type === 'vr' ? '360°' : '📸'}
+                      </div>
+                    </div>
+                    <div className="photo-info">
+                      <p>{media.description}</p>
+                      <p>by {media.photographerName}</p>
+                      <button 
+                        className="photographer-link-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePhotoClick(media);
+                        }}
+                      >
+                        View Photographer Profile
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <button 
+                onClick={() => setSelectedEvent(event)} 
+                className="view-event-btn"
+              >
+                View Full Event
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="no-live-events">
+          <div className="no-live-icon">🔴</div>
+          <h3>No Live Events</h3>
+          <p>Currently no events are happening live. Check back later!</p>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderPastEvents = () => (
+    <div className="past-events">
+      <div className="section-header">
+        <h2>📚 Past Events</h2>
+        <p>Completed events and their photo galleries</p>
+      </div>
+
+      <div className="past-events-grid">
+        {userEvents.filter(event => event.status === 'completed').map(event => (
+          <div key={event.id} className="past-event-card">
+            <div className="event-cover">
+              <img src={event.coverImage} alt={event.name} />
+              <div className="event-status">
+                <span className="status-badge completed">✅ Completed</span>
+              </div>
+            </div>
+            <div className="event-info">
+              <h3>{event.name}</h3>
+              <p className="event-date">📅 {new Date(event.date).toLocaleDateString()}</p>
+              <p className="event-location">📍 {event.location}</p>
+              <p className="event-organizer">👤 {event.organizer}</p>
+              <div className="event-stats">
+                <span>📷 {event.totalPhotos} photos</span>
+                <span>🎥 {event.totalVideos} videos</span>
+              </div>
+              <div className="event-photographers">
+                <span>📸 {event.photographers.length} photographers</span>
+              </div>
+                </div>
+            <button 
+              onClick={() => setSelectedEvent(event)} 
+              className="view-gallery-btn"
+            >
+              View Gallery
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderPhotographerUpload = () => (
+    <div className="photographer-upload-section">
+      <div className="section-header">
+        <h2>📤 Professional Photo Upload</h2>
+        <p>Upload and organize your event photos professionally</p>
+      </div>
+      
+      <div className="upload-workflow">
+        {/* Step 1: Event Selection */}
+        <div className="upload-step">
+          <div className="step-header">
+            <span className="step-number">1</span>
+            <h3>Select Event</h3>
+          </div>
+          <div className="step-content">
+            <div className="event-selection">
+              <label>Choose Event:</label>
+              <select
+                value={uploadData.eventId}
+                onChange={(e) => setUploadData({ ...uploadData, eventId: e.target.value })}
+                className="event-select"
+              >
+                <option value="">Select an event...</option>
+                {userEvents.map(event => (
+                  <option key={event.id} value={event.id}>
+                    {event.name} - {new Date(event.date).toLocaleDateString()} ({event.status})
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            {uploadData.eventId && (
+              <div className="selected-event-info">
+                {(() => {
+                  const selectedEvent = userEvents.find(e => e.id == uploadData.eventId);
+                  return selectedEvent ? (
+                    <div className="event-preview">
+                      <img src={selectedEvent.coverImage} alt={selectedEvent.name} />
+                      <div className="event-details">
+                        <h4>{selectedEvent.name}</h4>
+                        <p>📅 {new Date(selectedEvent.date).toLocaleDateString()}</p>
+                        <p>📍 {selectedEvent.location}</p>
+                        <p>👤 {selectedEvent.organizer}</p>
+                        <span className={`status-badge ${selectedEvent.status}`}>
+                          {selectedEvent.status.charAt(0).toUpperCase() + selectedEvent.status.slice(1)}
+                        </span>
+                      </div>
+                    </div>
+                  ) : null;
+                })()}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Step 2: File Selection */}
+        <div className="upload-step">
+          <div className="step-header">
+            <span className="step-number">2</span>
+            <h3>Select Photos</h3>
+          </div>
+          <div className="step-content">
+            <div className="file-upload-area">
+              <input
+                type="file"
+                multiple
+                accept="image/*,.raw,.cr2,.nef,.arw"
+                onChange={handleFileSelect}
+                className="file-input"
+                id="photo-upload"
+              />
+              <label htmlFor="photo-upload" className="upload-label">
+                <div className="upload-icon">📷</div>
+                <h4>Choose Photos to Upload</h4>
+                <p>Drag & drop or click to select photos (JPG, PNG, RAW formats supported)</p>
+                <div className="upload-stats">
+                  <span>Max file size: 50MB per photo</span>
+                  <span>Supported formats: JPG, PNG, RAW</span>
+                </div>
+              </label>
+            </div>
+
+            {selectedFiles.length > 0 && (
+              <div className="selected-files">
+                <h4>Selected Files ({selectedFiles.length})</h4>
+                <div className="files-grid">
+                  {selectedFiles.map((file, index) => (
+                    <div key={index} className="file-preview">
+                      <img 
+                        src={URL.createObjectURL(file)} 
+                        alt={file.name}
+                        className="preview-image"
+                      />
+                      <div className="file-info">
+                        <p className="file-name">{file.name}</p>
+                        <p className="file-size">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                      </div>
+                      <button 
+                        className="remove-file"
+                        onClick={() => setSelectedFiles(files => files.filter((_, i) => i !== index))}
+                      >
+                        ❌
+        </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Step 3: Metadata & Settings */}
+        <div className="upload-step">
+          <div className="step-header">
+            <span className="step-number">3</span>
+            <h3>Photo Details & Settings</h3>
+        </div>
+          <div className="step-content">
+            <div className="metadata-form">
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Category</label>
+                  <select
+                    value={uploadData.category}
+                    onChange={(e) => setUploadData({ ...uploadData, category: e.target.value })}
+                  >
+                    <option value="wedding">Wedding</option>
+                    <option value="portrait">Portrait</option>
+                    <option value="event">Event</option>
+                    <option value="fashion">Fashion</option>
+                    <option value="commercial">Commercial</option>
+                    <option value="general">General</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Resolution</label>
+                  <select
+                    value={uploadData.resolution}
+                    onChange={(e) => setUploadData({ ...uploadData, resolution: e.target.value })}
+                  >
+                    <option value="high">High (Original)</option>
+                    <option value="medium">Medium (Compressed)</option>
+                    <option value="low">Low (Preview)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Description</label>
+                <textarea
+                  value={uploadData.description}
+                  onChange={(e) => setUploadData({ ...uploadData, description: e.target.value })}
+                  placeholder="Describe these photos or add any special notes..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Tags</label>
+                <input
+                  type="text"
+                  value={uploadData.tags}
+                  onChange={(e) => setUploadData({ ...uploadData, tags: e.target.value })}
+                  placeholder="wedding, ceremony, reception, portrait..."
+                />
+                <small>Separate tags with commas</small>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Delivery Date</label>
+                  <input
+                    type="date"
+                    value={uploadData.deliveryDate}
+                    onChange={(e) => setUploadData({ ...uploadData, deliveryDate: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Client Approval Required</label>
+                  <select
+                    value={uploadData.clientApproval}
+                    onChange={(e) => setUploadData({ ...uploadData, clientApproval: e.target.value })}
+                  >
+                    <option value="pending">Pending Approval</option>
+                    <option value="approved">Pre-approved</option>
+                    <option value="not-required">Not Required</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="upload-options">
+                <div className="option-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={uploadData.isWatermarked}
+                      onChange={(e) => setUploadData({ ...uploadData, isWatermarked: e.target.checked })}
+                    />
+                    <span className="checkmark"></span>
+                    Add Watermark
+                  </label>
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={uploadData.isFeatured}
+                      onChange={(e) => setUploadData({ ...uploadData, isFeatured: e.target.checked })}
+                    />
+                    <span className="checkmark"></span>
+                    Mark as Featured
+                  </label>
+                </div>
+
+                <div className="pricing-section">
+                  <label>Pricing (₹)</label>
+                  <div className="pricing-options">
+                    <input
+                      type="number"
+                      value={uploadData.price}
+                      onChange={(e) => setUploadData({ ...uploadData, price: parseInt(e.target.value) || 0 })}
+                      placeholder="0"
+                      min="0"
+                    />
+                    <span className="price-note">Leave 0 for free photos</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Step 4: Upload Progress */}
+        {isUploading && (
+          <div className="upload-step">
+            <div className="step-header">
+              <span className="step-number">4</span>
+              <h3>Uploading Photos</h3>
+            </div>
+            <div className="step-content">
+              <div className="upload-progress">
+                <div className="overall-progress">
+                  <div className="progress-bar">
+                    <div 
+                      className="progress-fill"
+                      style={{ width: `${Object.values(uploadProgress).length > 0 ? 
+                        Object.values(uploadProgress).reduce((a, b) => a + b, 0) / Object.values(uploadProgress).length : 0}%` }}
+                    ></div>
+                  </div>
+                  <span className="progress-text">
+                    {Object.values(uploadProgress).length > 0 ? 
+                      Math.round(Object.values(uploadProgress).reduce((a, b) => a + b, 0) / Object.values(uploadProgress).length) : 0}% Complete
+                  </span>
+                </div>
+                
+                <div className="files-progress">
+                  {uploadQueue.map((file, index) => (
+                    <div key={index} className="file-progress">
+                      <span className="file-name">{file.name}</span>
+                      <div className="progress-bar small">
+                        <div 
+                          className="progress-fill"
+                          style={{ width: `${uploadProgress[`file_${Date.now()}_${index}`] || 0}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Upload Button */}
+        <div className="upload-actions">
+          <button
+            className="professional-upload-btn"
+            onClick={handleProfessionalUpload}
+            disabled={selectedFiles.length === 0 || !uploadData.eventId || isUploading}
+          >
+            {isUploading ? '⏳ Uploading...' : `📤 Upload ${selectedFiles.length} Photos`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderMyEvents = () => (
     <div className="my-events">
       <div className="section-header">
-        <h2>My Events</h2>
-        <p>Manage and view photos from your events</p>
+        <h2>{currentUser?.role === 'photographer' ? 'My Photography Events' : 'My Events'}</h2>
+        <p>{currentUser?.role === 'photographer' ? 'Manage your photography assignments and upload photos' : 'View photos from events you attended'}</p>
+      </div>
+
+      <div className="filter-sort-section">
+        <div className="filter-group">
+          <label className="filter-label">Filter by Status:</label>
+          <div className="filter-buttons">
+            <button 
+              className={`filter-btn ${filterStatus === 'all' ? 'active' : ''}`}
+              onClick={() => setFilterStatus('all')}
+            >
+              All ({userEvents.length})
+            </button>
+            <button 
+              className={`filter-btn ${filterStatus === 'upcoming' ? 'active' : ''}`}
+              onClick={() => setFilterStatus('upcoming')}
+            >
+              🔜 Upcoming ({userEvents.filter(e => e.status === 'upcoming').length})
+            </button>
+            <button 
+              className={`filter-btn ${filterStatus === 'live' ? 'active' : ''}`}
+              onClick={() => setFilterStatus('live')}
+            >
+              🔴 Live ({userEvents.filter(e => e.status === 'live').length})
+            </button>
+            <button 
+              className={`filter-btn ${filterStatus === 'completed' ? 'active' : ''}`}
+              onClick={() => setFilterStatus('completed')}
+            >
+              ✅ Completed ({userEvents.filter(e => e.status === 'completed').length})
+            </button>
+          </div>
+        </div>
+
+        <div className="sort-group">
+          <label className="sort-label">Sort by:</label>
+          <select 
+            className="sort-select"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+          >
+            <option value="recent">🕒 Most Recent</option>
+            <option value="oldest">📅 Oldest First</option>
+            <option value="participants">👥 Most Photographers</option>
+            <option value="photos">📷 Most Photos</option>
+            <option value="alphabetical">🔤 A to Z</option>
+          </select>
+          <button 
+            className="reset-filters-btn"
+            onClick={() => {
+              setFilterStatus('all');
+              setSortBy('recent');
+            }}
+          >
+            🔄 Reset
+          </button>
+        </div>
+      </div>
+
+      <div className="results-counter">
+        <span className="results-text">
+          Showing {filteredEvents.length} event{filteredEvents.length !== 1 ? 's' : ''}
+          {filterStatus !== 'all' && ` (${filterStatus})`}
+          {sortBy !== 'recent' && ` sorted by ${sortBy.replace('-', ' ')}`}
+        </span>
       </div>
       
       <div className="events-grid">
-        {userEvents.map(event => (
-          <div key={event.id} className="event-card" onClick={() => setSelectedEvent(event)}>
+        {filteredEvents.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-icon">
+              {filterStatus === 'all' 
+                ? '📅'
+                : filterStatus === 'live' ? '🔴' 
+                : filterStatus === 'upcoming' ? '🔜'
+                : '✅'
+              }
+            </div>
+            <h3>
+              {filterStatus === 'all' 
+                ? 'No Events Found'
+                : `No ${filterStatus.charAt(0).toUpperCase() + filterStatus.slice(1)} Events Found`
+              }
+            </h3>
+            <p>
+              {filterStatus === 'all' 
+                ? 'No events match your current criteria. Try adjusting your filters or sorting options.'
+                : `No events match your current filter criteria. Try adjusting your filters or sorting options.`
+              }
+            </p>
+            <div className="empty-state-actions">
+              <button 
+                className="empty-state-btn"
+                onClick={() => {
+                  setFilterStatus('all');
+                  setSortBy('recent');
+                }}
+              >
+                🔄 Reset Filters
+              </button>
+            </div>
+          </div>
+        ) : (
+          filteredEvents.map(event => (
+          <div key={event.id} className={`event-card ${currentUser?.role === 'photographer' ? 'photographer-event' : ''}`} onClick={() => setSelectedEvent(event)}>
             <div className="event-cover">
               <img src={event.coverImage} alt={event.name} />
               <div className="event-status">
                 <span className={`status-badge ${event.status}`}>
-                  {event.status === 'completed' ? '✅ Completed' : '⏳ Upcoming'}
+                  {event.status === 'completed' ? '✅ Completed' : 
+                   event.status === 'live' ? '🔴 LIVE' : '⏳ Upcoming'}
                 </span>
               </div>
               {event.challenges.length > 0 && (
                 <div className="challenge-badge">🏆 Active Challenge</div>
+              )}
+              {currentUser?.role === 'photographer' && event.photographers.includes(currentUser.id) && (
+                <div className="photographer-badge">📸 Your Event</div>
               )}
             </div>
             <div className="event-info">
@@ -396,61 +1198,85 @@ function EventPhotos({
                   <span>🏆 {event.challenges.length} active challenge(s)</span>
                 </div>
               )}
+              
+              {/* Photographer-specific actions */}
+              {currentUser?.role === 'photographer' && event.photographers.includes(currentUser.id) && (
+                <div className="photographer-actions">
+                  {event.status === 'upcoming' && (
+                    <button 
+                      className="quick-upload-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setUploadData(prev => ({ ...prev, eventId: event.id }));
+                        setActiveTab('photographer-upload');
+                      }}
+                    >
+                      📤 Quick Upload
+                    </button>
+                  )}
+                  {event.status === 'live' && (
+                    <button 
+                      className="live-upload-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setUploadData(prev => ({ ...prev, eventId: event.id }));
+                        setActiveTab('photographer-upload');
+                      }}
+                    >
+                      🔴 Live Upload
+                    </button>
+                  )}
+                  {event.status === 'completed' && (
+                    <button 
+                      className="final-upload-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setUploadData(prev => ({ ...prev, eventId: event.id }));
+                        setActiveTab('photographer-upload');
+                      }}
+                    >
+                      📸 Final Upload
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const renderUploadMedia = () => (
-    <div className="upload-media">
-      <div className="section-header">
-        <h2>Upload Media</h2>
-        <p>Share your event photos and videos</p>
+          ))
+        )}
       </div>
       
-      <div className="upload-section">
-        <button onClick={() => setUploadModal(true)} className="upload-btn">
-          📤 Upload Photos/Videos
-        </button>
-        
-        <div className="upload-guidelines">
-          <h3>Upload Guidelines</h3>
-          <ul>
-            <li>✅ Supported formats: JPG, PNG, MP4, MOV, VR360</li>
-            <li>✅ Maximum file size: 50MB per file</li>
-            <li>✅ Add descriptions and tags for better discoverability</li>
-            <li>✅ Set pricing for premium content</li>
-            <li>✅ Choose watermark options</li>
-            <li>✅ Customer uploads are moderated by organizers</li>
-          </ul>
+      {/* Photographer-specific summary */}
+      {currentUser?.role === 'photographer' && (
+        <div className="photographer-summary">
+          <div className="summary-cards">
+            <div className="summary-card">
+              <h4>📸 My Events</h4>
+              <p className="summary-number">{userEvents.filter(e => e.photographers.includes(currentUser.id)).length}</p>
+              <p className="summary-label">Total Assignments</p>
+            </div>
+            <div className="summary-card">
+              <h4>✅ Completed</h4>
+              <p className="summary-number">{userEvents.filter(e => e.status === 'completed' && e.photographers.includes(currentUser.id)).length}</p>
+              <p className="summary-label">Finished Events</p>
+            </div>
+            <div className="summary-card">
+              <h4>🔴 Live</h4>
+              <p className="summary-number">{userEvents.filter(e => e.status === 'live' && e.photographers.includes(currentUser.id)).length}</p>
+              <p className="summary-label">Ongoing Events</p>
+            </div>
+            <div className="summary-card">
+              <h4>⏳ Upcoming</h4>
+              <p className="summary-number">{userEvents.filter(e => e.status === 'upcoming' && e.photographers.includes(currentUser.id)).length}</p>
+              <p className="summary-label">Scheduled Events</p>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 
-  const renderNotifications = () => (
-    <div className="notifications">
-      <div className="section-header">
-        <h2>Notifications</h2>
-        <p>Stay updated with new event photos</p>
-      </div>
-      
-      <div className="notifications-list">
-        {notifications.map((notification, index) => (
-          <div key={index} className="notification-item">
-            <div className="notification-icon">📸</div>
-            <div className="notification-content">
-              <p>{notification}</p>
-              <span className="notification-time">2 hours ago</span>
-            </div>
-            <button className="view-btn">View</button>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+
 
   const renderPhotoChallenges = () => (
     <div className="photo-challenges">
@@ -528,87 +1354,6 @@ function EventPhotos({
     </div>
   );
 
-  const renderPublicGallery = () => (
-    <div className="public-gallery">
-      <div className="section-header">
-        <h2>Public Gallery</h2>
-        <p>Discover amazing event photos from the community</p>
-      </div>
-      
-      <div className="gallery-filters">
-        <select className="filter-select" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-          <option value="all">All Media</option>
-          <option value="photos">Photos</option>
-          <option value="videos">Videos</option>
-          <option value="vr">VR/360°</option>
-          <option value="customer">Customer Uploads</option>
-        </select>
-        <select className="filter-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-          <option value="recent">Most Recent</option>
-          <option value="popular">Most Popular</option>
-          <option value="likes">Most Liked</option>
-          <option value="comments">Most Commented</option>
-        </select>
-        <select className="filter-select">
-          <option>All Photographers</option>
-          {photographers.map(p => (
-            <option key={p.id}>{p.name}</option>
-          ))}
-        </select>
-        <input type="text" placeholder="Search photos..." className="search-input" />
-      </div>
-      
-      <div className="gallery-grid">
-        {Object.values(eventMedia).flat().map(media => (
-          <div key={media.id} className="gallery-item">
-            <div className="media-container">
-              {media.type === 'photo' ? (
-                <img src={media.url} alt={media.description} />
-              ) : media.type === 'vr' ? (
-                <div className="vr-container">
-                  <img src={media.thumbnail} alt={media.description} />
-                  <div className="vr-badge">360°</div>
-                </div>
-              ) : (
-                <video poster={media.thumbnail} controls>
-                  <source src={media.url} type="video/mp4" />
-                </video>
-              )}
-              {media.isHighlighted && <div className="highlighted-badge">⭐ Featured</div>}
-              {media.isWatermarked && <div className="watermark-badge">💧 Watermarked</div>}
-              {media.isCustomerUpload && <div className="customer-badge">👤 Customer</div>}
-              {media.isVR && <div className="vr-badge">360°</div>}
-            </div>
-            <div className="media-info">
-              <h4>{media.description}</h4>
-              <p>by {media.photographerName}</p>
-              <div className="media-stats">
-                <span>❤️ {media.likes}</span>
-                <span>💖 {media.loves}</span>
-                <span>🔥 {media.fires}</span>
-                <span>💬 {media.comments.length}</span>
-              </div>
-              <div className="media-actions">
-                <button onClick={() => handleReaction(media.id, 'like')} className="action-btn">❤️</button>
-                <button onClick={() => handleReaction(media.id, 'love')} className="action-btn">💖</button>
-                <button onClick={() => handleReaction(media.id, 'fire')} className="action-btn">🔥</button>
-                <button onClick={() => { setSelectedMedia(media); setCommentModal(true); }} className="action-btn">💬</button>
-                <button onClick={() => handleShare(media.id)} className="action-btn">📤</button>
-                <button onClick={() => handleTagRequest(media.id)} className="action-btn">🏷️</button>
-                <button onClick={() => handleSaveToMoodboard(media.id)} className="action-btn">📋</button>
-                <button onClick={() => { setSelectedMedia(media); setDownloadModal(true); }} className="action-btn">⬇️</button>
-                {media.price > 0 && (
-                  <button onClick={() => handlePurchase(media.id, media.price)} className="purchase-btn">
-                    Buy ₹{media.price}
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
 
   const renderEventDetail = () => (
     <div className="event-detail">
@@ -650,10 +1395,36 @@ function EventPhotos({
       )}
       
       <div className="event-controls">
-        {currentUser?.role === 'photographer' && (
-          <button onClick={() => setUploadModal(true)} className="upload-btn">
-            📤 Upload to this Event
-          </button>
+        {currentUser?.role === 'photographer' && selectedEvent.photographers.includes(currentUser.id) && (
+          <div className="photographer-controls">
+            <button 
+              onClick={() => {
+                setUploadData(prev => ({ ...prev, eventId: selectedEvent.id }));
+                setActiveTab('photographer-upload');
+                setSelectedEvent(null);
+              }} 
+              className="upload-btn"
+            >
+              📤 Upload Photos
+            </button>
+            <button className="manage-photos-btn">
+              📋 Manage My Photos
+            </button>
+            <button className="event-stats-btn">
+              📊 View My Stats
+            </button>
+            <button className="client-delivery-btn">
+              📦 Client Delivery
+            </button>
+          </div>
+        )}
+        {currentUser?.role === 'photographer' && !selectedEvent.photographers.includes(currentUser.id) && (
+          <div className="photographer-info">
+            <p>You are not assigned to this event</p>
+            <button className="request-assignment-btn">
+              📝 Request Assignment
+            </button>
+          </div>
         )}
         {currentUser?.role === 'customer' && (
           <button onClick={() => setUploadModal(true)} className="customer-upload-btn">
@@ -671,19 +1442,24 @@ function EventPhotos({
       
       <div className="event-media">
         <div className="media-filters">
-          <button className={`filter-btn ${filterType === 'all' ? 'active' : ''}`} onClick={() => setFilterType('all')}>All Media</button>
-          <button className={`filter-btn ${filterType === 'photos' ? 'active' : ''}`} onClick={() => setFilterType('photos')}>Photos</button>
-          <button className={`filter-btn ${filterType === 'videos' ? 'active' : ''}`} onClick={() => setFilterType('videos')}>Videos</button>
-          <button className={`filter-btn ${filterType === 'vr' ? 'active' : ''}`} onClick={() => setFilterType('vr')}>VR/360°</button>
-          <button className={`filter-btn ${filterType === 'featured' ? 'active' : ''}`} onClick={() => setFilterType('featured')}>Featured</button>
+          <button className="filter-btn active">All Media</button>
+          <button className="filter-btn">Photos</button>
+          <button className="filter-btn">Videos</button>
+          <button className="filter-btn">VR/360°</button>
+          <button className="filter-btn">Featured</button>
         </div>
         
         <div className="media-grid">
           {eventMedia[selectedEvent.id]?.map(media => (
-            <div key={media.id} className="media-item">
-              <div className="media-container">
+            <div key={media.id} className={`media-item ${media.photographerId === currentUser?.id ? 'my-photo' : ''}`}>
+              <div className="media-container" onClick={() => media.type === 'photo' && handlePhotoClick(media)}>
                 {media.type === 'photo' ? (
-                  <img src={media.url} alt={media.description} />
+                  <img 
+                    src={media.url} 
+                    alt={media.description} 
+                    style={{ cursor: 'pointer' }}
+                    title="Click to view photographer profile"
+                  />
                 ) : media.type === 'vr' ? (
                   <div className="vr-container">
                     <img src={media.thumbnail} alt={media.description} />
@@ -699,10 +1475,37 @@ function EventPhotos({
                 {media.isCustomerUpload && <div className="customer-badge">👤 Customer</div>}
                 {media.isVR && <div className="vr-badge">360°</div>}
                 {!media.isApproved && <div className="pending-badge">⏳ Pending Approval</div>}
+                {media.photographerId === currentUser?.id && <div className="my-photo-badge">📸 My Photo</div>}
               </div>
               <div className="media-info">
                 <h4>{media.description}</h4>
                 <p>by {media.photographerName}</p>
+                
+                {/* Photographer-specific photo info */}
+                {currentUser?.role === 'photographer' && media.photographerId === currentUser.id && (
+                  <div className="photographer-photo-info">
+                    <div className="photo-performance">
+                      <span className="performance-metric">
+                        <strong>{media.likes + media.loves + media.fires}</strong> total reactions
+                      </span>
+                      <span className="performance-metric">
+                        <strong>{media.comments.length}</strong> comments
+                      </span>
+                      {media.price > 0 && (
+                        <span className="performance-metric">
+                          <strong>₹{media.price}</strong> price
+                        </span>
+                      )}
+                    </div>
+                    <div className="photo-status">
+                      <span className={`status-indicator ${media.isApproved ? 'approved' : 'pending'}`}>
+                        {media.isApproved ? '✅ Approved' : '⏳ Pending'}
+                      </span>
+                      {media.isHighlighted && <span className="status-indicator featured">⭐ Featured</span>}
+                    </div>
+                  </div>
+                )}
+                
                 <div className="media-stats">
                   <span>❤️ {media.likes}</span>
                   <span>💖 {media.loves}</span>
@@ -723,6 +1526,22 @@ function EventPhotos({
                       Buy ₹{media.price}
                     </button>
                   )}
+                  
+                  {/* Photographer-specific actions for their own photos */}
+                  {currentUser?.role === 'photographer' && media.photographerId === currentUser.id && (
+                    <div className="photographer-photo-actions">
+                      <button className="edit-photo-btn" title="Edit photo details">
+                        ✏️
+                      </button>
+                      <button className="duplicate-photo-btn" title="Duplicate this photo">
+                        📋
+                      </button>
+                      <button className="delete-photo-btn" title="Delete photo">
+                        🗑️
+                      </button>
+                    </div>
+                  )}
+                  
                   {currentUser?.role === 'organizer' && !media.isApproved && (
                     <div className="approval-actions">
                       <button onClick={() => handleApproveMedia(media.id)} className="approve-btn">✅</button>
@@ -764,9 +1583,9 @@ function EventPhotos({
           
           <div className="event-photos-content">
             {activeTab === 'my-events' && renderMyEvents()}
-            {activeTab === 'upload' && renderUploadMedia()}
-            {activeTab === 'notifications' && renderNotifications()}
-            {activeTab === 'gallery' && renderPublicGallery()}
+            {activeTab === 'photographer-upload' && renderPhotographerUpload()}
+            {activeTab === 'live-photos' && renderLivePhotos()}
+            {activeTab === 'past-events' && renderPastEvents()}
             {activeTab === 'challenges' && renderPhotoChallenges()}
             {activeTab === 'leaderboard' && renderLeaderboard()}
           </div>
@@ -927,6 +1746,84 @@ function EventPhotos({
               <div className="modal-actions">
                 <button onClick={() => setDownloadModal(false)} className="cancel-btn">Close</button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Media Viewer Modal */}
+      {viewerModal && viewingMedia && (
+        <div className="media-viewer-modal">
+          <div className="viewer-overlay" onClick={() => setViewerModal(false)}></div>
+          <div className="viewer-content">
+            <div className="viewer-header">
+              <div className="viewer-info">
+                <h3>{viewingMedia.description}</h3>
+                <p>by {viewingMedia.photographerName}</p>
+                <p className="upload-time">
+                  Uploaded: {new Date(viewingMedia.uploadedAt).toLocaleString()}
+                </p>
+              </div>
+              <button 
+                className="close-viewer-btn"
+                onClick={() => setViewerModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="viewer-media">
+              {viewingMedia.type === 'photo' ? (
+                <img 
+                  src={viewingMedia.url} 
+                  alt={viewingMedia.description}
+                  className="viewer-image"
+                />
+              ) : viewingMedia.type === 'video' ? (
+                <video 
+                  src={viewingMedia.url}
+                  controls
+                  autoPlay
+                  className="viewer-video"
+                >
+                  <source src={viewingMedia.url} type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+              ) : (
+                <img 
+                  src={viewingMedia.thumbnail || viewingMedia.url} 
+                  alt={viewingMedia.description}
+                  className="viewer-image"
+                />
+              )}
+            </div>
+            
+            <div className="viewer-actions">
+              <button 
+                className="photographer-profile-btn"
+                onClick={() => {
+                  setViewerModal(false);
+                  handlePhotoClick(viewingMedia);
+                }}
+              >
+                📸 View Photographer Profile
+              </button>
+              <button 
+                className="download-btn"
+                onClick={() => {
+                  setViewerModal(false);
+                  setSelectedMedia(viewingMedia);
+                  setDownloadModal(true);
+                }}
+              >
+                ⬇️ Download
+              </button>
+              <button 
+                className="share-btn"
+                onClick={() => handleShare(viewingMedia.id)}
+              >
+                📤 Share
+              </button>
             </div>
           </div>
         </div>

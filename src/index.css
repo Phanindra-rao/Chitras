@@ -1082,3 +1082,9 @@ body {
     height: 150px;
   }
 }
+
+/* Photographer Main Content */
+.photographer-main {
+  padding: 0 !important;
+  margin: 0 !important;
+}

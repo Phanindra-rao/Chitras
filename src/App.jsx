@@ -20,6 +20,8 @@ import ExploreFeed from './components/ExploreFeed/ExploreFeed';
 import EventPhotos from './components/EventPhotos/EventPhotos';
 import PhotographerDiscovery from './components/PhotographerDiscovery/PhotographerDiscovery';
 import CommunityBuzz from './components/CommunityBuzz/CommunityBuzz';
+import Photobooth from './components/Photobooth/Photobooth';
+import Maps from './components/Maps/Maps';
 
 function App() {
   const [view, setView] = useState('home');
@@ -27,6 +29,8 @@ function App() {
   const [selectedPhotographer, setSelectedPhotographer] = useState(null);
   const [currentEventSlide, setCurrentEventSlide] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showMessaging, setShowMessaging] = useState(false);
+  const [selectedPhotographerId, setSelectedPhotographerId] = useState(null);
 
   const [users] = useState([
     {
@@ -644,16 +648,20 @@ function App() {
   return (
     <div className="App">
       {console.log('Rendering App with:', { currentUser, view })}
-      <Header 
-        currentUser={currentUser} 
-        onSignOut={handleLogout}
-        setView={setView}
-        view={view}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-      />
+      {/* Only show main header if current user is not a photographer */}
+      {currentUser?.role !== 'photographer' && (
+        <Header 
+          currentUser={currentUser} 
+          onSignOut={handleLogout}
+          setView={setView}
+          view={view}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          onMessagingToggle={() => setShowMessaging(!showMessaging)}
+        />
+      )}
       
-      <main className="main-content">
+      <main className={`main-content ${currentUser?.role === 'photographer' ? 'photographer-main' : ''}`}>
         {view === 'home' && (
           <>
             {!currentUser ? (
@@ -793,7 +801,13 @@ function App() {
                 </div>
               </>
             ) : (
-              <PhotographerDashboard user={currentUser} />
+              <PhotographerDashboard 
+                currentUser={currentUser}
+                photographers={users.filter(u => u.role === 'photographer')}
+                users={users}
+                onViewProfile={handlePhotographerClick}
+                onNavigateToPhotographer={handlePhotographerClick}
+              />
             )}
           </>
         )}
@@ -839,13 +853,41 @@ function App() {
             photographers={users.filter(u => u.role === 'photographer')}
             onPhotographerSelect={handlePhotographerClick}
             onSaveToMoodboard={handleSaveMoodboard}
+            onNavigateToPhotographer={handlePhotographerClick}
           />
         )}
         
         {view === 'community-buzz' && (
           <CommunityBuzz currentUser={currentUser} />
         )}
+        
+        {view === 'photobooth' && (
+          <Photobooth currentUser={currentUser} showModeSelector={false} />
+        )}
+        
+        {view === 'maps' && (
+          <Maps 
+            currentUser={currentUser}
+            photographers={users.filter(u => u.role === 'photographer')}
+            onPhotographerSelect={handlePhotographerClick}
+          />
+        )}
       </main>
+      
+      {showMessaging && (
+        <MessagingPanel
+          users={users}
+          currentUser={currentUser}
+          onClose={() => setShowMessaging(false)}
+          onViewProfile={(photographerId) => {
+            setSelectedPhotographerId(photographerId);
+            setSelectedPhotographer(users.find(u => u.id === photographerId));
+            setView('photographer-profile');
+            setShowMessaging(false);
+          }}
+          selectedPhotographerId={selectedPhotographerId}
+        />
+      )}
       
       <Footer />
       <ContactButton />
